@@ -35,15 +35,22 @@
     border-image-slice: 1;
     background: var(--gradient) !important;
     -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
+    -webkit-text-fill-color: #fff !important;
     border-image-source:  var(--gradient) !important; 
-    text-decoration: none;
+    /* text-decoration: none; */
     transition: all .4s ease;
   }
   
-  .port-but {
-    background-color: red;
+  .resume-btn {
+    border: 5px solid;
+    color:#fff!important;
+    -webkit-text-fill-color: #fff !important;
+    background-color: #4b9cd3;
   }
+  .resume-btn:hover, .resume-btn:focus {
+    text-decoration:underline;
+  }
+
 
   .btn:hover, .btn:focus {
         background: var(--gradient) !important;
@@ -11448,6 +11455,29 @@ p.lead {
 .social-icons .social-icon:hover {
   background-color: #bd5d38;
 }
+
+.link-icons .link-icon {
+  /* display: inline-flex; */
+  display: inline-block;
+  align-items: center;
+  justify-content: center;
+  /* height: 3.5rem; */
+  /* width: 3.5rem; */
+  /* width: fit-content; */
+  /* padding: 30px; */
+  background-color: #495057;
+  color: #fff;
+  border-radius: 10%;
+  font-size: 1.5rem;
+  margin-right: 1.5rem;
+}
+.link-icons .link-icon:last-child {
+  margin-right: 0;
+}
+.link-icons .link-icon:hover {
+  background-color: #bd5d38;
+}
+
 
 .dev-icons {
   font-size: 3rem;
