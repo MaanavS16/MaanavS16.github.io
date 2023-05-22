@@ -27,10 +27,40 @@ github_username:  MaanavS16
 
 # Build settings
 remote_theme: "mmistakes/minimal-mistakes@4.24.0"
+minimal_mistakes_skin: "default"
+
 markdown: kramdown
 plugins:
   - jekyll-feed
   - jekyll-include-cache
+
+
+# Site Author
+author:
+  name             : "Maanav Singh"
+  avatar           : "/assets/images/profile.png"
+  bio              : "Computer Science and Math Student at UNC Chapel Hill"
+  location         : "Morrisville, NC"
+  email            : "msingh2@unc.edu"
+  uri              :
+  bitbucket        :
+  codepen          :
+  dribbble         :
+  flickr           :
+  facebook         :
+  foursquare       :
+  github           : "maanavs16"
+  keybase          :
+  instagram        :
+  lastfm           :
+  linkedin         : "maanav-singh"
+  pinterest        :
+  soundcloud       :
+  stackoverflow    :
+  steam            :
+  tumblr           :
+  twitter          :
+  youtube          :
 
 # Exclude from processing.
 # The following items will not be processed, by default. Create a custom list
