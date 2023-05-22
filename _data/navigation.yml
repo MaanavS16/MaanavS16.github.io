@@ -1,0 +1,9 @@
+main:
+    - title: "About"
+      url: /index.html
+    - title: "Blog"
+      url: /blog/
+    - title: "Projects"
+      url: /projects.html
+    - title: "Resume"
+      url: /assets/maanav-singh-resume.pdf
