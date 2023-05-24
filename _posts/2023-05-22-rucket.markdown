@@ -1,0 +1,143 @@
+---
+layout: single
+classes: wide
+title:  "Rucket: Customizable In-Order Reliable Data Transport"
+date:   2023-05-22 15:23:54 -0400
+categories: systems networking
+
+---
+
+Reliable and fast data transport is hard. Let's see if I can make it any easier
+
+## What's there to improve?
+
+In the relatively stagnant world of transport protocols, I often find myself grappling with a challenging dilemma: choosing between reliable data transport (RDT), transmission speed, and ease of development. While the tried-and-true options of Transmission Control Protocol (TCP) and User Datagram Protocol (UDP) have their respective strengths, they also come with inherent limitations. 
+
+While developing an application that requires inter-application communication, three prevailing options exist:
+
+* TCP ensures reliable delivery of data but can suffer from increased latency and overhead.
+* UDP offers blazing fast transmission speeds but lacks built-in reliability mechanisms.
+* A custom application layer transport scheme can provide the optimal balance but requires extensive domain knowledge and engineering effort
+
+
+## How can this be made better?
+
+Currently, if reliable in-order data transfer is required, most applications will simply utilize an OS syscall or language specific STL library to transport data using TCP. This approach is often a sore-spot for performance critical applications, where lengthy and non-modular measures are required to achieve reliability and performance requirements.
+
+My solution is to introduce an application layer library which abstracts away all the messy details of in-order reliable data transport, while also providing a simple interface for configuration: enabling the potential for superior performance.
+
+
+>I'm going to call this package **Rucket**: Rust + {socket, packet}?
+>
+>Which as you might have guessed, means that I will be writing the program with [Rust](https://www.rust-lang.org/), but the target platform will be available in both Rust and [Python](https://www.python.org/). This Rust to Python binding will be achieved using [PyO3](https://github.com/PyO3/pyo3).
+>
+>Some reasons why I think rust is a good fit for this project:
+>* It's a low-level compiled language built on the [LLVM](https://llvm.org/) backend, and has been shown to generate very performant binaries
+>* Very memory safe**\*** (without the need for a garbage collector). This will hopefully help stop me from introducing too many bugs!
+>* I haven't used rust for a large software project yet, so I wanted to give it a shot :3
+>
+>check [this](https://visualstudiomagazine.com/articles/2019/07/18/microsoft-eyes-rust.aspx) neat article out!**\***
+
+![Transport Stacks](/assets/images/protocol_stack.png)
+
+*The above figure demonstrates a traditional hierarchy of protocols to reliably transmit data on the left vs. rucket's newly proposed hierarchy on the right.*
+
+My guiding principle in developing this tool is:
+> "Different applications have incredibly different transport requirements, so I want to make changing the behavior as easy as possible."
+
+This idea leads to the following distinguishing features:
+* Simple config interface for tweaking parameters
+* Nearly identical API to standard socket library
+
+
+## It's not all roses!
+
+An under-appreciated but beautiful objective of TCP is to promote fair-sharing of network bandwidth. This avoids a debilitating  problem called [Congestion Collapse](https://www.freesoft.org/CIE/RFC/896/2.htm): which is roughly analogous to "grid-lock" on a highway which prevents any vehicle's passage. This prevention is achieved through an algorithm called Congestion Control: which probes the network for available bandwidth and promptly retracts usage once loss is encountered.
+
+Part of the speed improvement Rucket will be from loosening or disabling the parameters involved in encouraging fair sharing and hopefully saturating a larger fraction of the network's throughput. Congestion control will still be available if the developer deems maintaining fair-sharing is necessary to prevent a drastic drop in performance from congestion.
+
+Furthermore, due to the requirement of TCP like data on top of existing UDP headers. There will likely be some overhead in usable capacity per segment. This loss is demonstrated in the below figure:
+
+![Segment diagrams](/assets/images/segments.png)
+
+*This figure shows what a sample segment may look like for UDP, TCP, and Rucket respectively (top->down). The red arrow indicated the data overhead of rucket over native TCP. But as demonstrated later, this difference will more than be compensated with increased throughput.*
+
+
+**If you're looking for a simple and well supported way to reliably send data between instances of your applications, and you don't have strict and well understood performance requirements I would wholly recommend clicking away to at least try something similar to [sockets](https://realpython.com/python-sockets/) or [requests](https://requests.readthedocs.io/en/latest/).**
+
+This library should in-theory approximately match the performance of sockets with default configurations but with far less support. I hope to help you decide if the ability tune the internal implementation of transmission is worth this tradeoff
+
+## Cool! How can I use it?
+
+Rucket **will soon** be available to use through python by installing the following [PyPi package](https://pypi.org/project/pip/). The [source code](https://github.com/MaanavS16) is also available.
+
+
+It can be more simply installed using the following command
+```
+pip install rucket
+```
+
+If you don't care about the nitty gritty details, then the following code example should highlight the utility of the package.
+
+### Your server:
+{% highlight python %}
+import rucket
+
+SERVER_HOST "jn.server.net"
+SERVER_PORT = 6243
+
+config = rucket.config() # default configuration -- you can customize this
+
+# Make sure to call rucket.socket.close() after use (implict w/ with keyword)
+with rucket.socket(config) as skt:
+
+  # bind rucket's application to a specific port on the host
+  skt.bind((SERVER_HOST, SERVER_PORT))
+
+  # blocking process, wait until someone connects
+  client_connection, client_address = skt.accept()
+
+  # Now we can interact with client
+  while True:
+    # Block process until data arrives. Pulling at most 1024 bytes
+    client_message = client_connection.recv(1024).decode()
+    print(f"I just got a message from {client_address}, saying \"{client_message}\"")
+
+    client_connection.send("Thanks for the message :3".encode())
+
+    if client_message == "Goodbye":
+      client_connection.send("bye bye".encode())
+      break
+
+  client_connection.close()
+
+{% endhighlight %}
+
+### Your client:
+{% highlight python %}
+import rucket
+
+MY_HOST "mn.client.net"
+MY_PORT = 9103
+
+config = rucket.config()
+
+with rucket.socket(config) as skt:
+  skt.bind((MY_HOST, MY_PORT))
+  skt.connect(("jn.server.net", 6243))
+
+  skt.send("Wasup dawg".encode())
+  print(skt.recv(1024).decode())
+
+  skt.send("Goodbye".encode())
+  print(skt.recv(1024).decode())
+
+{% endhighlight %}
+
+This is a simple python program, that demonstrates how rucket can be used. The magic is really in the `rucket.config` object which will specify the parameters and enable tweaking of how data is transmitted. Also note that this exchange is intentionally similar to the standard python [sockets](https://docs.python.org/3/library/socket.html) library to make migration easy.
+
+## Diving into the details!
+
+Ok, you're still around, thanks!
+
+I'm still working on this part, so return to this page at at least one point in the interval $(now, \inf)$

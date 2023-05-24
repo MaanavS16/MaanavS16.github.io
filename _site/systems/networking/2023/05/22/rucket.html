@@ -1,0 +1,544 @@
+<!doctype html>
+<!--
+  Minimal Mistakes Jekyll Theme 4.24.0 by Michael Rose
+  Copyright 2013-2020 Michael Rose - mademistakes.com | @mmistakes
+  Free for personal and commercial use under the MIT license
+  https://github.com/mmistakes/minimal-mistakes/blob/master/LICENSE
+-->
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+
+<!-- begin _includes/seo.html --><title>Rucket: Customizable In-Order Reliable Data Transport - Maanav Singh</title>
+<meta name="description" content="Reliable and fast data transport is hard. Let’s see if I can make it any easier">
+
+
+  <meta name="author" content="Maanav Singh">
+  
+  <meta property="article:author" content="Maanav Singh">
+  
+
+
+<meta property="og:type" content="article">
+<meta property="og:locale" content="en_US">
+<meta property="og:site_name" content="Maanav Singh">
+<meta property="og:title" content="Rucket: Customizable In-Order Reliable Data Transport">
+<meta property="og:url" content="http://localhost:4000/systems/networking/2023/05/22/rucket.html">
+
+
+  <meta property="og:description" content="Reliable and fast data transport is hard. Let’s see if I can make it any easier">
+
+
+
+
+
+
+
+  <meta property="article:published_time" content="2023-05-22T15:23:54-04:00">
+
+
+
+
+
+
+<link rel="canonical" href="http://localhost:4000/systems/networking/2023/05/22/rucket.html">
+
+
+
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    
+      "@type": "Person",
+      "name": null,
+      "url": "http://localhost:4000/",
+      "sameAs": ["https://www.linkedin.com/in/maanav-singh/"]
+    
+  }
+</script>
+
+
+
+
+
+
+
+<!-- end _includes/seo.html -->
+
+
+
+  <link href="/feed.xml" type="application/atom+xml" rel="alternate" title="Maanav Singh Feed">
+
+
+<!-- https://t.co/dKP3o1e -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script>
+  document.documentElement.className = document.documentElement.className.replace(/\bno-js\b/g, '') + ' js ';
+</script>
+
+<!-- For all browsers -->
+<link rel="stylesheet" href="/assets/css/main.css">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css"></noscript>
+
+
+
+    <!-- start custom head snippets -->
+
+<!-- insert favicons. use https://realfavicongenerator.net/ -->
+
+<!-- end custom head snippets -->
+
+  </head>
+
+  <body class="layout--single wide">
+    <nav class="skip-links">
+  <ul>
+    <li><a href="#site-nav" class="screen-reader-shortcut">Skip to primary navigation</a></li>
+    <li><a href="#main" class="screen-reader-shortcut">Skip to content</a></li>
+    <li><a href="#footer" class="screen-reader-shortcut">Skip to footer</a></li>
+  </ul>
+</nav>
+
+    <!--[if lt IE 9]>
+<div class="notice--danger align-center" style="margin: 0;">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade your browser</a> to improve your experience.</div>
+<![endif]-->
+
+    
+
+<div class="masthead">
+  <div class="masthead__inner-wrap">
+    <div class="masthead__menu">
+      <nav id="site-nav" class="greedy-nav">
+        
+        <a class="site-title" href="/">
+          Maanav Singh
+          
+        </a>
+        <ul class="visible-links"><li class="masthead__menu-item">
+              <a href="/index.html">About</a>
+            </li><li class="masthead__menu-item">
+              <a href="/blog/">Blog</a>
+            </li><li class="masthead__menu-item">
+              <a href="/projects.html">Projects</a>
+            </li><li class="masthead__menu-item">
+              <a href="/assets/resume/maanav-singh-resume.pdf">Resume</a>
+            </li></ul>
+        
+        <button class="search__toggle" type="button">
+          <span class="visually-hidden">Toggle search</span>
+          <i class="fas fa-search"></i>
+        </button>
+        
+        <button class="greedy-nav__toggle hidden" type="button">
+          <span class="visually-hidden">Toggle menu</span>
+          <div class="navicon"></div>
+        </button>
+        <ul class="hidden-links hidden"></ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+
+    <div class="initial-content">
+      
+
+
+
+<div id="main" role="main">
+  
+  <div class="sidebar sticky">
+  
+
+
+<div itemscope itemtype="https://schema.org/Person">
+
+  
+    <div class="author__avatar">
+      
+        <img src="/assets/images/re_li_pfp.png" alt="Maanav Singh" itemprop="image">
+      
+    </div>
+  
+
+  <div class="author__content">
+    
+      <h3 class="author__name" itemprop="name">Maanav Singh</h3>
+    
+    
+      <div class="author__bio" itemprop="description">
+        <p>Computer Science and Math Student at UNC Chapel Hill</p>
+
+      </div>
+    
+  </div>
+
+  <div class="author__urls-wrapper">
+    <button class="btn btn--inverse">Follow</button>
+    <ul class="author__urls social-icons">
+      
+        <li itemprop="homeLocation" itemscope itemtype="https://schema.org/Place">
+          <i class="fas fa-fw fa-map-marker-alt" aria-hidden="true"></i> <span itemprop="name">Morrisville, NC</span>
+        </li>
+      
+
+      
+
+      
+
+      
+        <li>
+          <a href="mailto:msingh2@unc.edu">
+            <meta itemprop="email" content="msingh2@unc.edu" />
+            <i class="fas fa-fw fa-envelope-square" aria-hidden="true"></i><span class="label">Email</span>
+          </a>
+        </li>
+      
+
+      
+
+      
+
+      
+
+      
+        <li>
+          <a href="https://www.linkedin.com/in/maanav-singh" itemprop="sameAs" rel="nofollow noopener noreferrer">
+            <i class="fab fa-fw fa-linkedin" aria-hidden="true"></i><span class="label">LinkedIn</span>
+          </a>
+        </li>
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+        <li>
+          <a href="https://github.com/maanavs16" itemprop="sameAs" rel="nofollow noopener noreferrer">
+            <i class="fab fa-fw fa-github" aria-hidden="true"></i><span class="label">GitHub</span>
+          </a>
+        </li>
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      <!--
+  <li>
+    <a href="http://link-to-whatever-social-network.com/user/" itemprop="sameAs" rel="nofollow noopener noreferrer">
+      <i class="fas fa-fw" aria-hidden="true"></i> Custom Social Profile Link
+    </a>
+  </li>
+-->
+    </ul>
+  </div>
+</div>
+
+  
+  </div>
+
+
+
+  <article class="page" itemscope itemtype="https://schema.org/CreativeWork">
+    <meta itemprop="headline" content="Rucket: Customizable In-Order Reliable Data Transport">
+    <meta itemprop="description" content="Reliable and fast data transport is hard. Let’s see if I can make it any easier">
+    <meta itemprop="datePublished" content="2023-05-22T15:23:54-04:00">
+    
+
+    <div class="page__inner-wrap">
+      
+        <header>
+          <h1 id="page-title" class="page__title" itemprop="headline">Rucket: Customizable In-Order Reliable Data Transport
+</h1>
+          
+
+  <p class="page__meta">
+    
+
+    
+
+    
+      
+      
+
+      <span class="page__meta-readtime">
+        <i class="far fa-clock" aria-hidden="true"></i>
+        
+          4 minute read
+        
+      </span>
+    
+  </p>
+
+
+        </header>
+      
+
+      <section class="page__content" itemprop="text">
+        
+        <p>Reliable and fast data transport is hard. Let’s see if I can make it any easier</p>
+
+<h2 id="whats-there-to-improve">What’s there to improve?</h2>
+
+<p>In the relatively stagnant world of transport protocols, I often find myself grappling with a challenging dilemma: choosing between reliable data transport (RDT), transmission speed, and ease of development. While the tried-and-true options of Transmission Control Protocol (TCP) and User Datagram Protocol (UDP) have their respective strengths, they also come with inherent limitations.</p>
+
+<p>While developing an application that requires inter-application communication, three prevailing options exist:</p>
+
+<ul>
+  <li>TCP ensures reliable delivery of data but can suffer from increased latency and overhead.</li>
+  <li>UDP offers blazing fast transmission speeds but lacks built-in reliability mechanisms.</li>
+  <li>A custom application layer transport scheme can provide the optimal balance but requires extensive domain knowledge and engineering effort</li>
+</ul>
+
+<h2 id="how-can-this-be-made-better">How can this be made better?</h2>
+
+<p>Currently, if reliable in-order data transfer is required, most applications will simply utilize an OS syscall or language specific STL library to transport data using TCP. This approach is often a sore-spot for performance critical applications, where lengthy and non-modular measures are required to achieve reliability and performance requirements.</p>
+
+<p>My solution is to introduce an application layer library which abstracts away all the messy details of in-order reliable data transport, while also providing a simple interface for configuration: enabling the potential for superior performance.</p>
+
+<blockquote>
+  <p>I’m going to call this package <strong>Rucket</strong>: Rust + {socket, packet}?</p>
+
+  <p>Which as you might have guessed, means that I will be writing the program with <a href="https://www.rust-lang.org/">Rust</a>, but the target platform will be available in both Rust and <a href="https://www.python.org/">Python</a>. This Rust to Python binding will be achieved using <a href="https://github.com/PyO3/pyo3">PyO3</a>.</p>
+
+  <p>Some reasons why I think rust is a good fit for this project:</p>
+  <ul>
+    <li>It’s a low-level compiled language built on the <a href="https://llvm.org/">LLVM</a> backend, and has been shown to generate very performant binaries</li>
+    <li>Very memory safe<strong>*</strong> (without the need for a garbage collector). This will hopefully help stop me from introducing too many bugs!</li>
+    <li>I haven’t used rust for a large software project yet, so I wanted to give it a shot :3</li>
+  </ul>
+
+  <p>check <a href="https://visualstudiomagazine.com/articles/2019/07/18/microsoft-eyes-rust.aspx">this</a> neat article out!<strong>*</strong></p>
+</blockquote>
+
+<p><img src="/assets/images/protocol_stack.png" alt="Transport Stacks" /></p>
+
+<p><em>The above figure demonstrates a traditional hierarchy of protocols to reliably transmit data on the left vs. rucket’s newly proposed hierarchy on the right.</em></p>
+
+<p>My guiding principle in developing this tool is:</p>
+<blockquote>
+  <p>“Different applications have incredibly different transport requirements, so I want to make changing the behavior as easy as possible.”</p>
+</blockquote>
+
+<p>This idea leads to the following distinguishing features:</p>
+<ul>
+  <li>Simple config interface for tweaking parameters</li>
+  <li>Nearly identical API to standard socket library</li>
+</ul>
+
+<h2 id="its-not-all-roses">It’s not all roses!</h2>
+
+<p>An under-appreciated but beautiful objective of TCP is to promote fair-sharing of network bandwidth. This avoids a debilitating  problem called <a href="https://www.freesoft.org/CIE/RFC/896/2.htm">Congestion Collapse</a>: which is roughly analogous to “grid-lock” on a highway which prevents any vehicle’s passage. This prevention is achieved through an algorithm called Congestion Control: which probes the network for available bandwidth and promptly retracts usage once loss is encountered.</p>
+
+<p>Part of the speed improvement Rucket will be from loosening or disabling the parameters involved in encouraging fair sharing and hopefully saturating a larger fraction of the network’s throughput. Congestion control will still be available if the developer deems maintaining fair-sharing is necessary to prevent a drastic drop in performance from congestion.</p>
+
+<p>Furthermore, due to the requirement of TCP like data on top of existing UDP headers. There will likely be some overhead in usable capacity per segment. This loss is demonstrated in the below figure:</p>
+
+<p><img src="/assets/images/segments.png" alt="Segment diagrams" /></p>
+
+<p><em>This figure shows what a sample segment may look like for UDP, TCP, and Rucket respectively (top-&gt;down). The red arrow indicated the data overhead of rucket over native TCP. But as demonstrated later, this difference will more than be compensated with increased throughput.</em></p>
+
+<p><strong>If you’re looking for a simple and well supported way to reliably send data between instances of your applications, and you don’t have strict and well understood performance requirements I would wholly recommend clicking away to at least try something similar to <a href="https://realpython.com/python-sockets/">sockets</a> or <a href="https://requests.readthedocs.io/en/latest/">requests</a>.</strong></p>
+
+<p>This library should in-theory approximately match the performance of sockets with default configurations but with far less support. I hope to help you decide if the ability tune the internal implementation of transmission is worth this tradeoff</p>
+
+<h2 id="cool-how-can-i-use-it">Cool! How can I use it?</h2>
+
+<p>Rucket <strong>will soon</strong> be available to use through python by installing the following <a href="https://pypi.org/project/pip/">PyPi package</a>. The <a href="https://github.com/MaanavS16">source code</a> is also available.</p>
+
+<p>It can be more simply installed using the following command</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pip install rucket
+</code></pre></div></div>
+
+<p>If you don’t care about the nitty gritty details, then the following code example should highlight the utility of the package.</p>
+
+<h3 id="your-server">Your server:</h3>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">rucket</span>
+
+<span class="n">SERVER_HOST</span> <span class="s">"jn.server.net"</span>
+<span class="n">SERVER_PORT</span> <span class="o">=</span> <span class="mi">6243</span>
+
+<span class="n">config</span> <span class="o">=</span> <span class="n">rucket</span><span class="p">.</span><span class="n">config</span><span class="p">()</span> <span class="c1"># default configuration -- you can customize this
+</span>
+<span class="c1"># Make sure to call rucket.socket.close() after use (implict w/ with keyword)
+</span><span class="k">with</span> <span class="n">rucket</span><span class="p">.</span><span class="n">socket</span><span class="p">(</span><span class="n">config</span><span class="p">)</span> <span class="k">as</span> <span class="n">skt</span><span class="p">:</span>
+
+  <span class="c1"># bind rucket's application to a specific port on the host
+</span>  <span class="n">skt</span><span class="p">.</span><span class="n">bind</span><span class="p">((</span><span class="n">SERVER_HOST</span><span class="p">,</span> <span class="n">SERVER_PORT</span><span class="p">))</span>
+
+  <span class="c1"># blocking process, wait until someone connects
+</span>  <span class="n">client_connection</span><span class="p">,</span> <span class="n">client_address</span> <span class="o">=</span> <span class="n">skt</span><span class="p">.</span><span class="n">accept</span><span class="p">()</span>
+
+  <span class="c1"># Now we can interact with client
+</span>  <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+    <span class="c1"># Block process until data arrives. Pulling at most 1024 bytes
+</span>    <span class="n">client_message</span> <span class="o">=</span> <span class="n">client_connection</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">).</span><span class="n">decode</span><span class="p">()</span>
+    <span class="k">print</span><span class="p">(</span><span class="sa">f</span><span class="s">"I just got a message from </span><span class="si">{</span><span class="n">client_address</span><span class="si">}</span><span class="s">, saying </span><span class="se">\"</span><span class="si">{</span><span class="n">client_message</span><span class="si">}</span><span class="se">\"</span><span class="s">"</span><span class="p">)</span>
+
+    <span class="n">client_connection</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="s">"Thanks for the message :3"</span><span class="p">.</span><span class="n">encode</span><span class="p">())</span>
+
+    <span class="k">if</span> <span class="n">client_message</span> <span class="o">==</span> <span class="s">"Goodbye"</span><span class="p">:</span>
+      <span class="n">client_connection</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="s">"bye bye"</span><span class="p">.</span><span class="n">encode</span><span class="p">())</span>
+      <span class="k">break</span>
+
+  <span class="n">client_connection</span><span class="p">.</span><span class="n">close</span><span class="p">()</span></code></pre></figure>
+
+<h3 id="your-client">Your client:</h3>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">rucket</span>
+
+<span class="n">MY_HOST</span> <span class="s">"mn.client.net"</span>
+<span class="n">MY_PORT</span> <span class="o">=</span> <span class="mi">9103</span>
+
+<span class="n">config</span> <span class="o">=</span> <span class="n">rucket</span><span class="p">.</span><span class="n">config</span><span class="p">()</span>
+
+<span class="k">with</span> <span class="n">rucket</span><span class="p">.</span><span class="n">socket</span><span class="p">(</span><span class="n">config</span><span class="p">)</span> <span class="k">as</span> <span class="n">skt</span><span class="p">:</span>
+  <span class="n">skt</span><span class="p">.</span><span class="n">bind</span><span class="p">((</span><span class="n">MY_HOST</span><span class="p">,</span> <span class="n">MY_PORT</span><span class="p">))</span>
+  <span class="n">skt</span><span class="p">.</span><span class="n">connect</span><span class="p">((</span><span class="s">"jn.server.net"</span><span class="p">,</span> <span class="mi">6243</span><span class="p">))</span>
+
+  <span class="n">skt</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="s">"Wasup dawg"</span><span class="p">.</span><span class="n">encode</span><span class="p">())</span>
+  <span class="k">print</span><span class="p">(</span><span class="n">skt</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">).</span><span class="n">decode</span><span class="p">())</span>
+
+  <span class="n">skt</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="s">"Goodbye"</span><span class="p">.</span><span class="n">encode</span><span class="p">())</span>
+  <span class="k">print</span><span class="p">(</span><span class="n">skt</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">).</span><span class="n">decode</span><span class="p">())</span></code></pre></figure>
+
+<p>This is a simple python program, that demonstrates how rucket can be used. The magic is really in the <code class="highlighter-rouge">rucket.config</code> object which will specify the parameters and enable tweaking of how data is transmitted. Also note that this exchange is intentionally similar to the standard python <a href="https://docs.python.org/3/library/socket.html">sockets</a> library to make migration easy.</p>
+
+<h2 id="diving-into-the-details">Diving into the details!</h2>
+
+<p>Ok, you’re still around, thanks!</p>
+
+<p>I’m still working on this part, so return to this page at at least one point in the interval $(now, \inf)$</p>
+
+        
+      </section>
+
+      <footer class="page__meta">
+        
+        
+
+
+        
+
+  <p class="page__date"><strong><i class="fas fa-fw fa-calendar-alt" aria-hidden="true"></i> Updated:</strong> <time datetime="2023-05-22T15:23:54-04:00">May 22, 2023</time></p>
+
+
+      </footer>
+
+      <section class="page__share">
+  
+
+  <a href="https://twitter.com/intent/tweet?text=Rucket%3A+Customizable+In-Order+Reliable+Data+Transport%20http%3A%2F%2Flocalhost%3A4000%2Fsystems%2Fnetworking%2F2023%2F05%2F22%2Frucket.html" class="btn btn--twitter" onclick="window.open(this.href, 'window', 'left=20,top=20,width=500,height=500,toolbar=1,resizable=0'); return false;" title="Share on Twitter"><i class="fab fa-fw fa-twitter" aria-hidden="true"></i><span> Twitter</span></a>
+
+  <a href="https://www.facebook.com/sharer/sharer.php?u=http%3A%2F%2Flocalhost%3A4000%2Fsystems%2Fnetworking%2F2023%2F05%2F22%2Frucket.html" class="btn btn--facebook" onclick="window.open(this.href, 'window', 'left=20,top=20,width=500,height=500,toolbar=1,resizable=0'); return false;" title="Share on Facebook"><i class="fab fa-fw fa-facebook" aria-hidden="true"></i><span> Facebook</span></a>
+
+  <a href="https://www.linkedin.com/shareArticle?mini=true&url=http%3A%2F%2Flocalhost%3A4000%2Fsystems%2Fnetworking%2F2023%2F05%2F22%2Frucket.html" class="btn btn--linkedin" onclick="window.open(this.href, 'window', 'left=20,top=20,width=500,height=500,toolbar=1,resizable=0'); return false;" title="Share on LinkedIn"><i class="fab fa-fw fa-linkedin" aria-hidden="true"></i><span> LinkedIn</span></a>
+</section>
+
+
+      
+    </div>
+
+    
+  </article>
+
+  
+  
+    <div class="page__related">
+      <h4 class="page__related-title">You May Also Enjoy</h4>
+      <div class="grid__wrapper">
+        
+          
+            
+      </div>
+    </div>
+  
+</div>
+
+    </div>
+
+    
+      <div class="search-content">
+        <div class="search-content__inner-wrap"><form class="search-content__form" onkeydown="return event.key != 'Enter';">
+    <label class="sr-only" for="search">
+      Enter your search term...
+    </label>
+    <input type="search" id="search" class="search-input" tabindex="-1" placeholder="Enter your search term..." />
+  </form>
+  <div id="results" class="results"></div></div>
+
+      </div>
+    
+
+    <div id="footer" class="page__footer">
+      <footer>
+        <!-- start custom footer snippets -->
+
+<!-- end custom footer snippets -->
+        <div class="page__footer-follow">
+  <ul class="social-icons">
+    
+
+    
+
+    
+      <li><a href="/feed.xml"><i class="fas fa-fw fa-rss-square" aria-hidden="true"></i> Feed</a></li>
+    
+  </ul>
+</div>
+
+<div class="page__footer-copyright">&copy; 2023 Maanav Singh. Powered by <a href="https://jekyllrb.com" rel="nofollow">Jekyll</a> &amp; <a href="https://mademistakes.com/work/minimal-mistakes-jekyll-theme/" rel="nofollow">Minimal Mistakes</a>.</div>
+
+      </footer>
+    </div>
+
+    
+  <script src="/assets/js/main.min.js"></script>
+
+
+
+
+<script src="/assets/js/lunr/lunr.min.js"></script>
+<script src="/assets/js/lunr/lunr-store.js"></script>
+<script src="/assets/js/lunr/lunr-en.js"></script>
+
+
+
+
+
+
+
+  </body>
+</html>

@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.7">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2023-05-24T19:18:38-04:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Maanav Singh</title><subtitle>Maanav Singh&apos;s Personal Website</subtitle><author><name>Maanav Singh</name><email>msingh2@unc.edu</email></author><entry><title type="html">Rucket: Customizable In-Order Reliable Data Transport</title><link href="http://localhost:4000/systems/networking/2023/05/22/rucket.html" rel="alternate" type="text/html" title="Rucket: Customizable In-Order Reliable Data Transport" /><published>2023-05-22T15:23:54-04:00</published><updated>2023-05-22T15:23:54-04:00</updated><id>http://localhost:4000/systems/networking/2023/05/22/rucket</id><content type="html" xml:base="http://localhost:4000/systems/networking/2023/05/22/rucket.html">&lt;p&gt;Reliable and fast data transport is hard. Let’s see if I can make it any easier&lt;/p&gt;
+
+&lt;h2 id=&quot;whats-there-to-improve&quot;&gt;What’s there to improve?&lt;/h2&gt;
+
+&lt;p&gt;In the relatively stagnant world of transport protocols, I often find myself grappling with a challenging dilemma: choosing between reliable data transport (RDT), transmission speed, and ease of development. While the tried-and-true options of Transmission Control Protocol (TCP) and User Datagram Protocol (UDP) have their respective strengths, they also come with inherent limitations.&lt;/p&gt;
+
+&lt;p&gt;While developing an application that requires inter-application communication, three prevailing options exist:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;TCP ensures reliable delivery of data but can suffer from increased latency and overhead.&lt;/li&gt;
+  &lt;li&gt;UDP offers blazing fast transmission speeds but lacks built-in reliability mechanisms.&lt;/li&gt;
+  &lt;li&gt;A custom application layer transport scheme can provide the optimal balance but requires extensive domain knowledge and engineering effort&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;how-can-this-be-made-better&quot;&gt;How can this be made better?&lt;/h2&gt;
+
+&lt;p&gt;Currently, if reliable in-order data transfer is required, most applications will simply utilize an OS syscall or language specific STL library to transport data using TCP. This approach is often a sore-spot for performance critical applications, where lengthy and non-modular measures are required to achieve reliability and performance requirements.&lt;/p&gt;
+
+&lt;p&gt;My solution is to introduce an application layer library which abstracts away all the messy details of in-order reliable data transport, while also providing a simple interface for configuration: enabling the potential for superior performance.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;I’m going to call this package &lt;strong&gt;Rucket&lt;/strong&gt;: Rust + {socket, packet}?&lt;/p&gt;
+
+  &lt;p&gt;Which as you might have guessed, means that I will be writing the program with &lt;a href=&quot;https://www.rust-lang.org/&quot;&gt;Rust&lt;/a&gt;, but the target platform will be available in both Rust and &lt;a href=&quot;https://www.python.org/&quot;&gt;Python&lt;/a&gt;. This Rust to Python binding will be achieved using &lt;a href=&quot;https://github.com/PyO3/pyo3&quot;&gt;PyO3&lt;/a&gt;.&lt;/p&gt;
+
+  &lt;p&gt;Some reasons why I think rust is a good fit for this project:&lt;/p&gt;
+  &lt;ul&gt;
+    &lt;li&gt;It’s a low-level compiled language built on the &lt;a href=&quot;https://llvm.org/&quot;&gt;LLVM&lt;/a&gt; backend, and has been shown to generate very performant binaries&lt;/li&gt;
+    &lt;li&gt;Very memory safe&lt;strong&gt;*&lt;/strong&gt; (without the need for a garbage collector). This will hopefully help stop me from introducing too many bugs!&lt;/li&gt;
+    &lt;li&gt;I haven’t used rust for a large software project yet, so I wanted to give it a shot :3&lt;/li&gt;
+  &lt;/ul&gt;
+
+  &lt;p&gt;check &lt;a href=&quot;https://visualstudiomagazine.com/articles/2019/07/18/microsoft-eyes-rust.aspx&quot;&gt;this&lt;/a&gt; neat article out!&lt;strong&gt;*&lt;/strong&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/protocol_stack.png&quot; alt=&quot;Transport Stacks&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;The above figure demonstrates a traditional hierarchy of protocols to reliably transmit data on the left vs. rucket’s newly proposed hierarchy on the right.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;My guiding principle in developing this tool is:&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;p&gt;“Different applications have incredibly different transport requirements, so I want to make changing the behavior as easy as possible.”&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;This idea leads to the following distinguishing features:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;Simple config interface for tweaking parameters&lt;/li&gt;
+  &lt;li&gt;Nearly identical API to standard socket library&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;its-not-all-roses&quot;&gt;It’s not all roses!&lt;/h2&gt;
+
+&lt;p&gt;An under-appreciated but beautiful objective of TCP is to promote fair-sharing of network bandwidth. This avoids a debilitating  problem called &lt;a href=&quot;https://www.freesoft.org/CIE/RFC/896/2.htm&quot;&gt;Congestion Collapse&lt;/a&gt;: which is roughly analogous to “grid-lock” on a highway which prevents any vehicle’s passage. This prevention is achieved through an algorithm called Congestion Control: which probes the network for available bandwidth and promptly retracts usage once loss is encountered.&lt;/p&gt;
+
+&lt;p&gt;Part of the speed improvement Rucket will be from loosening or disabling the parameters involved in encouraging fair sharing and hopefully saturating a larger fraction of the network’s throughput. Congestion control will still be available if the developer deems maintaining fair-sharing is necessary to prevent a drastic drop in performance from congestion.&lt;/p&gt;
+
+&lt;p&gt;Furthermore, due to the requirement of TCP like data on top of existing UDP headers. There will likely be some overhead in usable capacity per segment. This loss is demonstrated in the below figure:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/segments.png&quot; alt=&quot;Segment diagrams&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;This figure shows what a sample segment may look like for UDP, TCP, and Rucket respectively (top-&amp;gt;down). The red arrow indicated the data overhead of rucket over native TCP. But as demonstrated later, this difference will more than be compensated with increased throughput.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;If you’re looking for a simple and well supported way to reliably send data between instances of your applications, and you don’t have strict and well understood performance requirements I would wholly recommend clicking away to at least try something similar to &lt;a href=&quot;https://realpython.com/python-sockets/&quot;&gt;sockets&lt;/a&gt; or &lt;a href=&quot;https://requests.readthedocs.io/en/latest/&quot;&gt;requests&lt;/a&gt;.&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;This library should in-theory approximately match the performance of sockets with default configurations but with far less support. I hope to help you decide if the ability tune the internal implementation of transmission is worth this tradeoff&lt;/p&gt;
+
+&lt;h2 id=&quot;cool-how-can-i-use-it&quot;&gt;Cool! How can I use it?&lt;/h2&gt;
+
+&lt;p&gt;Rucket &lt;strong&gt;will soon&lt;/strong&gt; be available to use through python by installing the following &lt;a href=&quot;https://pypi.org/project/pip/&quot;&gt;PyPi package&lt;/a&gt;. The &lt;a href=&quot;https://github.com/MaanavS16&quot;&gt;source code&lt;/a&gt; is also available.&lt;/p&gt;
+
+&lt;p&gt;It can be more simply installed using the following command&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;pip install rucket
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;If you don’t care about the nitty gritty details, then the following code example should highlight the utility of the package.&lt;/p&gt;
+
+&lt;h3 id=&quot;your-server&quot;&gt;Your server:&lt;/h3&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;span class=&quot;kn&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;rucket&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;SERVER_HOST&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;jn.server.net&quot;&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;SERVER_PORT&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;6243&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;config&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;rucket&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;# default configuration -- you can customize this
+&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;# Make sure to call rucket.socket.close() after use (implict w/ with keyword)
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;with&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;rucket&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;socket&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;skt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+
+  &lt;span class=&quot;c1&quot;&gt;# bind rucket&apos;s application to a specific port on the host
+&lt;/span&gt;  &lt;span class=&quot;n&quot;&gt;skt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bind&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;SERVER_HOST&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER_PORT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+
+  &lt;span class=&quot;c1&quot;&gt;# blocking process, wait until someone connects
+&lt;/span&gt;  &lt;span class=&quot;n&quot;&gt;client_connection&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;client_address&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;skt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;accept&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+
+  &lt;span class=&quot;c1&quot;&gt;# Now we can interact with client
+&lt;/span&gt;  &lt;span class=&quot;k&quot;&gt;while&lt;/span&gt; &lt;span class=&quot;bp&quot;&gt;True&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;# Block process until data arrives. Pulling at most 1024 bytes
+&lt;/span&gt;    &lt;span class=&quot;n&quot;&gt;client_message&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;client_connection&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;recv&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1024&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;decode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;sa&quot;&gt;f&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;I just got a message from &lt;/span&gt;&lt;span class=&quot;si&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;client_address&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;, saying &lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\&quot;&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;client_message&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+    &lt;span class=&quot;n&quot;&gt;client_connection&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;send&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Thanks for the message :3&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;encode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;client_message&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;Goodbye&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;client_connection&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;send&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;bye bye&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;encode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;break&lt;/span&gt;
+
+  &lt;span class=&quot;n&quot;&gt;client_connection&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;close&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h3 id=&quot;your-client&quot;&gt;Your client:&lt;/h3&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;span class=&quot;kn&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;rucket&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;MY_HOST&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;mn.client.net&quot;&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;MY_PORT&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;9103&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;config&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;rucket&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;with&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;rucket&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;socket&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;skt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;skt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bind&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MY_HOST&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MY_PORT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;skt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;connect&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;jn.server.net&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;6243&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+
+  &lt;span class=&quot;n&quot;&gt;skt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;send&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Wasup dawg&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;encode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;skt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;recv&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1024&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;decode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt;
+
+  &lt;span class=&quot;n&quot;&gt;skt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;send&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Goodbye&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;encode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;skt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;recv&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1024&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;decode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This is a simple python program, that demonstrates how rucket can be used. The magic is really in the &lt;code class=&quot;highlighter-rouge&quot;&gt;rucket.config&lt;/code&gt; object which will specify the parameters and enable tweaking of how data is transmitted. Also note that this exchange is intentionally similar to the standard python &lt;a href=&quot;https://docs.python.org/3/library/socket.html&quot;&gt;sockets&lt;/a&gt; library to make migration easy.&lt;/p&gt;
+
+&lt;h2 id=&quot;diving-into-the-details&quot;&gt;Diving into the details!&lt;/h2&gt;
+
+&lt;p&gt;Ok, you’re still around, thanks!&lt;/p&gt;
+
+&lt;p&gt;I’m still working on this part, so return to this page at at least one point in the interval $(now, \inf)$&lt;/p&gt;</content><author><name>Maanav Singh</name><email>msingh2@unc.edu</email></author><category term="systems" /><category term="networking" /><summary type="html">Reliable and fast data transport is hard. Let’s see if I can make it any easier</summary></entry></feed>

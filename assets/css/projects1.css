@@ -1,0 +1,118 @@
+section.resume-section {
+    display: flex;
+    align-items: center;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+    max-width: 75rem;
+  }
+  section.resume-section .resume-section-content {
+    width: 100%;
+  }
+
+  .resume-btn {
+    border: 5px solid;
+    color:#000000!important;
+    -webkit-text-fill-color: #000000 !important;
+    background-color: #ffffff;
+  }
+
+  .resume-btn:hover, .resume-btn:focus {
+    text-decoration:underline;
+  }
+  
+  @media (min-width: 768px) {
+    section.resume-section {
+      min-height: 100vh;
+    }
+  }
+  @media (min-width: 992px) {
+    section.resume-section {
+      padding-left: 3rem;
+      padding-right: 3rem;
+      padding-top: 5rem;
+      padding-bottom: 5rem;
+    }
+  }
+  
+  .mx-auto {
+    margin-right: auto !important;
+    margin-left: auto !important;
+  }
+  
+  
+  .container,
+  .container-fluid,
+  .container-xxl,
+  .container-xl,
+  .container-lg,
+  .container-md,
+  .container-sm {
+    width: 100%;
+    padding-right: var(--bs-gutter-x, 0.75rem);
+    padding-left: var(--bs-gutter-x, 0.75rem);
+    margin-right: auto;
+    margin-left: auto;
+  }
+  
+  .col-md-4 {
+    flex: 0 0 auto;
+    width: 33.33333333%;
+  }
+
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    word-wrap: break-word;
+    background-color: #fff;
+    background-clip: border-box;
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    border-radius: 0.25rem;
+  }
+
+  .card-body {
+      background-color: #7b8a94;
+  }
+  
+  .card-title {
+    color: #000000;
+
+    }
+
+    .card-text {
+        color: #000000;
+    }
+
+  .card-text:last-child {
+    margin-bottom: 0;
+  }
+
+  .mb-5 {
+    margin-bottom: 3rem !important;
+  }
+
+.mx-auto {
+    margin-right: auto !important;
+    margin-left: auto !important;
+  }
+
+  .mt-4 {
+    margin-top: 1.5rem !important;
+  }
+
+  .row {
+    --bs-gutter-x: 1.5rem;
+    --bs-gutter-y: 0;
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: calc(-1 * var(--bs-gutter-y));
+    margin-right: calc(-0.5 * var(--bs-gutter-x));
+    margin-left: calc(-0.5 * var(--bs-gutter-x));
+  }
+
+
+
+  
