@@ -124,6 +124,8 @@
             </li><li class="masthead__menu-item">
               <a href="/projects.html">Projects</a>
             </li><li class="masthead__menu-item">
+              <a href="/education/">Teaching + Learning</a>
+            </li><li class="masthead__menu-item">
               <a href="/assets/resume/maanav-singh-resume.pdf">Resume</a>
             </li></ul>
         
@@ -170,7 +172,7 @@
     
     
       <div class="author__bio" itemprop="description">
-        <p>Computer Science and Math Student at UNC Chapel Hill</p>
+        <p>CS and Math Student at UNC Chapel Hill</p>
 
       </div>
     
@@ -357,7 +359,7 @@
   <li>Nearly identical API to standard socket library</li>
 </ul>
 
-<h2 id="its-not-all-roses">It’s not all roses!</h2>
+<h2 id="its-not-all-roses-">It’s not all roses! 🌹</h2>
 
 <p>An under-appreciated but beautiful objective of TCP is to promote fair-sharing of network bandwidth. This avoids a debilitating  problem called <a href="https://www.freesoft.org/CIE/RFC/896/2.htm">Congestion Collapse</a>: which is roughly analogous to “grid-lock” on a highway which prevents any vehicle’s passage. This prevention is achieved through an algorithm called Congestion Control: which probes the network for available bandwidth and promptly retracts usage once loss is encountered.</p>
 
@@ -419,7 +421,7 @@
 
 <figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">rucket</span>
 
-<span class="n">MY_HOST</span> <span class="s">"mn.client.net"</span>
+<span class="n">MY_HOST</span> <span class="s">"mv.client.net"</span>
 <span class="n">MY_PORT</span> <span class="o">=</span> <span class="mi">9103</span>
 
 <span class="n">config</span> <span class="o">=</span> <span class="n">rucket</span><span class="p">.</span><span class="n">config</span><span class="p">()</span>
@@ -469,6 +471,16 @@
 
 
       
+  <nav class="pagination">
+    
+      <a href="#" class="pagination--pager disabled">Previous</a>
+    
+    
+      <a href="/systems/embedded/2023/05/23/cache-exploration.html" class="pagination--pager" title="Reverse Engineering my CPU’s Cache
+">Next</a>
+    
+  </nav>
+
     </div>
 
     
@@ -481,9 +493,49 @@
       <div class="grid__wrapper">
         
           
-            
+
+
+
+<div class="grid__item">
+  <article class="archive__item" itemscope itemtype="https://schema.org/CreativeWork">
+    
+    <h2 class="archive__item-title no_toc" itemprop="headline">
+      
+        <a href="/systems/embedded/2023/05/23/cache-exploration.html" rel="permalink">Reverse Engineering my CPU’s Cache
+</a>
+      
+    </h2>
+    
+
+  <p class="page__meta">
+    
+
+    
+
+    
+      
+      
+
+      <span class="page__meta-readtime">
+        <i class="far fa-clock" aria-hidden="true"></i>
+        
+          less than 1 minute read
+        
+      </span>
+    
+  </p>
+
+
+    <p class="archive__item-excerpt" itemprop="description">CPU caches enable incredible application performance. I’m going to try to reverse engineer it works!
+
+</p>
+  </article>
+</div>
+
+        
       </div>
     </div>
+  
   
 </div>
 

@@ -5,5 +5,7 @@ main:
       url: /blog/
     - title: "Projects"
       url: /projects.html
+    - title: "Teaching + Learning"
+      url: /education/
     - title: "Resume"
       url: /assets/resume/maanav-singh-resume.pdf

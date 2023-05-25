@@ -4,4 +4,10 @@ var store = [{
         "tags": [],
         "url": "/systems/networking/2023/05/22/rucket.html",
         "teaser": null
+      },{
+        "title": "Reverse Engineering my CPU's Cache",
+        "excerpt":"CPU caches enable incredible application performance. I’m going to try to reverse engineer it works!   To be written. (Sorry this site is a work in progress)  ","categories": ["systems","embedded"],
+        "tags": [],
+        "url": "/systems/embedded/2023/05/23/cache-exploration.html",
+        "teaser": null
       }]

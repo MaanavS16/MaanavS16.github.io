@@ -4,7 +4,6 @@ classes: wide
 title:  "Rucket: Customizable In-Order Reliable Data Transport"
 date:   2023-05-22 15:23:54 -0400
 categories: systems networking
-
 ---
 
 Reliable and fast data transport is hard. Let's see if I can make it any easier
@@ -50,7 +49,7 @@ This idea leads to the following distinguishing features:
 * Nearly identical API to standard socket library
 
 
-## It's not all roses!
+## It's not all roses! 🌹
 
 An under-appreciated but beautiful objective of TCP is to promote fair-sharing of network bandwidth. This avoids a debilitating  problem called [Congestion Collapse](https://www.freesoft.org/CIE/RFC/896/2.htm): which is roughly analogous to "grid-lock" on a highway which prevents any vehicle's passage. This prevention is achieved through an algorithm called Congestion Control: which probes the network for available bandwidth and promptly retracts usage once loss is encountered.
 
@@ -117,7 +116,7 @@ with rucket.socket(config) as skt:
 {% highlight python %}
 import rucket
 
-MY_HOST "mn.client.net"
+MY_HOST "mv.client.net"
 MY_PORT = 9103
 
 config = rucket.config()

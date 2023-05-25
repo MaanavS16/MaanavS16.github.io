@@ -120,6 +120,8 @@
             </li><li class="masthead__menu-item">
               <a href="/projects.html">Projects</a>
             </li><li class="masthead__menu-item">
+              <a href="/education/">Teaching + Learning</a>
+            </li><li class="masthead__menu-item">
               <a href="/assets/resume/maanav-singh-resume.pdf">Resume</a>
             </li></ul>
         
@@ -166,7 +168,7 @@
     
     
       <div class="author__bio" itemprop="description">
-        <p>Computer Science and Math Student at UNC Chapel Hill</p>
+        <p>CS and Math Student at UNC Chapel Hill</p>
 
       </div>
     
