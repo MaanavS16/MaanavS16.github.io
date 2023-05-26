@@ -18,7 +18,6 @@ While developing an application that requires inter-application communication, t
 * UDP offers blazing fast transmission speeds but lacks built-in reliability mechanisms.
 * A custom application layer transport scheme can provide the optimal balance but requires extensive domain knowledge and engineering effort
 
-
 ## How can this be made better?
 
 Currently, if reliable in-order data transfer is required, most applications will simply utilize an OS syscall or language specific STL library to transport data using TCP. This approach is often a sore-spot for performance critical applications, where lengthy and non-modular measures are required to achieve reliability and performance requirements.

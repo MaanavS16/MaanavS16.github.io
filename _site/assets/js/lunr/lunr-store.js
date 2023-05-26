@@ -5,8 +5,8 @@ var store = [{
         "url": "/systems/networking/2023/05/22/rucket.html",
         "teaser": null
       },{
-        "title": "Reverse Engineering my CPU's Cache",
-        "excerpt":"CPU caches enable incredible application performance. I’m going to try to reverse engineer it works!   To be written. (Sorry this site is a work in progress)  ","categories": ["systems","embedded"],
+        "title": "Reverse Engineering Memory",
+        "excerpt":"Caches, SSDs, and Disks are fundamental to application performance. Here I conduct a set of experiments to isolate and understand these components. Memory is absolutely essential in the field of computing. From an automata theory standpoint, it’s the key tool that enables us to reason with context-free and recursively enumerable...","categories": ["systems","embedded"],
         "tags": [],
         "url": "/systems/embedded/2023/05/23/cache-exploration.html",
         "teaser": null

@@ -1,6 +1,132 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.7">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2023-05-25T04:50:31-04:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Maanav Singh</title><subtitle>Maanav Singh&apos;s Personal Website</subtitle><author><name>Maanav Singh</name><email>msingh2@unc.edu</email></author><entry><title type="html">Reverse Engineering my CPU’s Cache</title><link href="http://localhost:4000/systems/embedded/2023/05/23/cache-exploration.html" rel="alternate" type="text/html" title="Reverse Engineering my CPU’s Cache" /><published>2023-05-23T15:23:54-04:00</published><updated>2023-05-23T15:23:54-04:00</updated><id>http://localhost:4000/systems/embedded/2023/05/23/cache-exploration</id><content type="html" xml:base="http://localhost:4000/systems/embedded/2023/05/23/cache-exploration.html">&lt;p&gt;CPU caches enable incredible application performance. I’m going to try to reverse engineer it works!&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.7">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2023-05-26T00:32:03-04:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Maanav Singh</title><subtitle>Maanav Singh&apos;s Personal Website</subtitle><author><name>Maanav Singh</name><email>msingh2@unc.edu</email></author><entry><title type="html">Reverse Engineering Memory</title><link href="http://localhost:4000/systems/embedded/2023/05/23/cache-exploration.html" rel="alternate" type="text/html" title="Reverse Engineering Memory" /><published>2023-05-23T15:23:54-04:00</published><updated>2023-05-23T15:23:54-04:00</updated><id>http://localhost:4000/systems/embedded/2023/05/23/cache-exploration</id><content type="html" xml:base="http://localhost:4000/systems/embedded/2023/05/23/cache-exploration.html">&lt;p&gt;Caches, SSDs, and Disks are fundamental to application performance. Here I conduct a set of experiments to isolate and understand these components.&lt;/p&gt;
 
-&lt;p&gt;To be written. (Sorry this site is a work in progress)&lt;/p&gt;</content><author><name>Maanav Singh</name><email>msingh2@unc.edu</email></author><category term="systems" /><category term="embedded" /><summary type="html">CPU caches enable incredible application performance. I’m going to try to reverse engineer it works!</summary></entry><entry><title type="html">Rucket: Customizable In-Order Reliable Data Transport</title><link href="http://localhost:4000/systems/networking/2023/05/22/rucket.html" rel="alternate" type="text/html" title="Rucket: Customizable In-Order Reliable Data Transport" /><published>2023-05-22T15:23:54-04:00</published><updated>2023-05-22T15:23:54-04:00</updated><id>http://localhost:4000/systems/networking/2023/05/22/rucket</id><content type="html" xml:base="http://localhost:4000/systems/networking/2023/05/22/rucket.html">&lt;p&gt;Reliable and fast data transport is hard. Let’s see if I can make it any easier&lt;/p&gt;
+&lt;hr /&gt;
+&lt;p&gt;Memory is absolutely essential in the field of computing. From an automata theory standpoint, it’s the key tool that enables us to reason with context-free and recursively enumerable languages. Beyond the theoretical power memory yields, the performance characteristics of various memory models and techniques heavily influence modern software.&lt;/p&gt;
+
+&lt;p&gt;My goal with these experiments is to fill in some of the holes in my knowledge with some hands on analysis with some documentation I can reference in the future.Before diving into the details I’d like to do a bottom-up review of computer memory in general.&lt;/p&gt;
+
+&lt;h2 id=&quot;types-of-memory&quot;&gt;Types of Memory&lt;/h2&gt;
+&lt;p&gt;The basic concept of memory in computer is to create a physical representation for data that can be written to and read from.&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;SRAM: Static Random Access Memory
+    &lt;ul&gt;
+      &lt;li&gt;&lt;strong&gt;1-10 ns&lt;/strong&gt; access times&lt;/li&gt;
+      &lt;li&gt;Built with transistors: Pretty much a D-Latch&lt;/li&gt;
+      &lt;li&gt;This is how register files in the CPU work&lt;/li&gt;
+      &lt;li&gt;Super expensive&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;DRAM: Dynamic Random Access Memory
+    &lt;ul&gt;
+      &lt;li&gt;&lt;strong&gt;~50 ns&lt;/strong&gt; access times&lt;/li&gt;
+      &lt;li&gt;Main memory implemented with this&lt;/li&gt;
+      &lt;li&gt;Less super expensive&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;Flash memory:
+    &lt;ul&gt;
+      &lt;li&gt;&lt;strong&gt;1-100 µs&lt;/strong&gt; access times&lt;/li&gt;
+      &lt;li&gt;No moving components while also being&lt;/li&gt;
+      &lt;li&gt;Cheap&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;Disk Storage
+    &lt;ul&gt;
+      &lt;li&gt;7200 rpm (most common speed) has &lt;strong&gt;~10ms access time&lt;/strong&gt;&lt;/li&gt;
+      &lt;li&gt;Spinning disks with magnetic platters and a read/write head that sets and specific magnetized regions.&lt;/li&gt;
+      &lt;li&gt;Very cheap&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;Magnetic Tape
+    &lt;ul&gt;
+      &lt;li&gt;You as a person need to retrieve the tapes :3&lt;/li&gt;
+      &lt;li&gt;Used for long term archival of data&lt;/li&gt;
+      &lt;li&gt;Github put a lot of these with open source code near the &lt;a href=&quot;https://archiveprogram.github.com/arctic-vault/&quot;&gt;north pole&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/MemoryHierarchy.png&quot; alt=&quot;memory hierarchy&quot; /&gt;
+Note: All of these access times are mostly for determining the OOM. Since at small-time scales the distance between the processor and the memory cells can play a significant role in access latency.&lt;/p&gt;
+
+&lt;p&gt;The above figure is present in every Comp Org textbook and if you’re not familiar shows amount, cost, and speed of various memory nodes. Where the top of the pyramid has the least quantity, highest cost, and highest speed.&lt;/p&gt;
+
+&lt;h2 id=&quot;cache-layout&quot;&gt;Cache Layout:&lt;/h2&gt;
+
+&lt;p&gt;The classic Von Neumann architecture, prescribes a unified memory store that both contains instructions and application data. While this is mostly true if you focus on the main system memory there a sequence of faster SRAM based hardware memory component called known as the CPU Cache.&lt;/p&gt;
+
+&lt;p&gt;A cache essentially acts as a lower latency intermediary between the CPU and system memory. It saves data entries that are likely to be accessed in the future and makes them available for quick access. When a particular memory addresses is trying to resolved, the cache is first checked.&lt;/p&gt;
+
+&lt;p&gt;This cache differs from the main memory in more ways than just speed however. The cache needs to determine what’s “likely to be accessed in the future”&lt;/p&gt;
+
+&lt;p&gt;This process is determined by a few design choices:&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;Should instructions and data be cached separately?
+    &lt;ul&gt;
+      &lt;li&gt;Pros for yes: Different access patterns for data and instructions&lt;/li&gt;
+      &lt;li&gt;Pros for no: Simpler and less hardware required: Translates to speed&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;Direct mapped or set associative?&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h4 id=&quot;direct-mapped&quot;&gt;Direct mapped:&lt;/h4&gt;
+
+&lt;p&gt;Partition the memory space into n regions, where there are n lines in the cache (So each partition gets a single line in the physical cache). If n is a power of two, then you can use the upper-order bits of an address to identify what the corresponding cache line is.&lt;/p&gt;
+
+&lt;p&gt;Each cache contains multiple words, meaning a single memory access&lt;/p&gt;
+
+&lt;p&gt;Steps for memory lookup in a direct mapped cache:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;CPU executes load / store instruction for a particular address.&lt;/li&gt;
+  &lt;li&gt;Set index portion of the address determines the relevant cache line&lt;/li&gt;
+  &lt;li&gt;(a) if the valid flag is set and the tag matches then the cache has hit. Return correct word by finding the offset within the data-field.&lt;/li&gt;
+  &lt;li&gt;(b) otherwise, issue a memory fetch from upper level cache/memory. After that’s resolved, evict the data and update the data field, tag, and set the valid bit.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/Block-diagram-of-a-direct-mapped-cache.png&quot; alt=&quot;dmcache&quot; /&gt;&lt;/p&gt;
+
+&lt;h4 id=&quot;set-associative&quot;&gt;Set Associative:&lt;/h4&gt;
+
+&lt;p&gt;A set associative cache is similar to a stack of smaller direct mapped caches. That’s to say, each partition of the memory space has k corresponding caches lines across the k stacked direct mapped caches. This type of cache is called a k-way set associative cache.&lt;/p&gt;
+
+&lt;p&gt;Now that there are more than one cache lines for a particular set, more logic needs to be implemented for deciding which entires from the set get to stay and which get evicted from the cache. In order to implement this behavior, there are a few bits in the cache line to store information about that particular entry.&lt;/p&gt;
+
+&lt;p&gt;These bits are often used to store either frequency or access time information. With that the eviction strategy can be to remove the least frequently accessed data region or the last accessed data region. (LFU/LRU caches)&lt;/p&gt;
+
+&lt;p&gt;Steps for memory lookup in a direct mapped cache:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;CPU executes load / store instruction for a particular address.&lt;/li&gt;
+  &lt;li&gt;Set index portion of the address determines the relevant cache lines&lt;/li&gt;
+  &lt;li&gt;(a) If the valid flag is set and the tag matches in any of the cache lines, return correct word by finding the offset within the data-field. Update the frequency or access time bits if applicable&lt;/li&gt;
+  &lt;li&gt;(b) otherwise, issue a memory fetch from upper level cache/memory. After, determine which line should be evicted to make space if any.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/sacache.jpg&quot; alt=&quot;sacache&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;A set associative cache is more advanced than a direct map cache, which results in more intelligent cache eviction and consequently higher hit rates. However, this comes at the cost of complexity and it’s associated latency increases.&lt;/p&gt;
+
+&lt;p&gt;average_latency = hit% * (cache access latency) + (1-hit%) * (memory access latency)&lt;/p&gt;
+
+&lt;p&gt;Where, hit% is determined by the cache type, strategy, and access patterns
+and cache access latency is determined by the design and complexity of the cache&lt;/p&gt;
+
+&lt;h2 id=&quot;jumping-into-some-code&quot;&gt;Jumping into some code&lt;/h2&gt;
+
+&lt;p&gt;After the introduction to basic cache structures, I’ve set 2 tasks for myself.&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Explore, the effect of caches on C++ STL data structures&lt;/li&gt;
+  &lt;li&gt;Determine the cache layout for my processor&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;All following benchmarks will be run on a single thread of an i9-10980XE processor
+2x32 GB DDR4 Memory @ 2666 MHZ&lt;/p&gt;
+&lt;/blockquote&gt;</content><author><name>Maanav Singh</name><email>msingh2@unc.edu</email></author><category term="systems" /><category term="embedded" /><summary type="html">Caches, SSDs, and Disks are fundamental to application performance. Here I conduct a set of experiments to isolate and understand these components.</summary></entry><entry><title type="html">Rucket: Customizable In-Order Reliable Data Transport</title><link href="http://localhost:4000/systems/networking/2023/05/22/rucket.html" rel="alternate" type="text/html" title="Rucket: Customizable In-Order Reliable Data Transport" /><published>2023-05-22T15:23:54-04:00</published><updated>2023-05-22T15:23:54-04:00</updated><id>http://localhost:4000/systems/networking/2023/05/22/rucket</id><content type="html" xml:base="http://localhost:4000/systems/networking/2023/05/22/rucket.html">&lt;p&gt;Reliable and fast data transport is hard. Let’s see if I can make it any easier&lt;/p&gt;
 
 &lt;h2 id=&quot;whats-there-to-improve&quot;&gt;What’s there to improve?&lt;/h2&gt;
 
