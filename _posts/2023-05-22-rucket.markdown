@@ -1,6 +1,5 @@
 ---
 layout: single
-classes: wide
 title:  "Rucket: Customizable In-Order Reliable Data Transport"
 date:   2023-05-22 15:23:54 -0400
 categories: systems networking

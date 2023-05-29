@@ -9,8 +9,8 @@
   <head>
     <meta charset="utf-8">
 
-<!-- begin _includes/seo.html --><title>Reverse Engineering Memory - Maanav Singh</title>
-<meta name="description" content="Caches, SSDs, and Disks are fundamental to application performance. Here I conduct a set of experiments to isolate and understand these components.">
+<!-- begin _includes/seo.html --><title>Effects of Cache on Application Performance - Maanav Singh</title>
+<meta name="description" content="Memory access times play a huge role on performance characteristics of programs. Here I conduct a set of experiments to isolate and understand these effects.">
 
 
   <meta name="author" content="Maanav Singh">
@@ -22,11 +22,11 @@
 <meta property="og:type" content="article">
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Maanav Singh">
-<meta property="og:title" content="Reverse Engineering Memory">
+<meta property="og:title" content="Effects of Cache on Application Performance">
 <meta property="og:url" content="http://localhost:4000/systems/embedded/2023/05/23/cache-exploration.html">
 
 
-  <meta property="og:description" content="Caches, SSDs, and Disks are fundamental to application performance. Here I conduct a set of experiments to isolate and understand these components.">
+  <meta property="og:description" content="Memory access times play a huge role on performance characteristics of programs. Here I conduct a set of experiments to isolate and understand these effects.">
 
 
 
@@ -273,15 +273,15 @@
 
 
   <article class="page" itemscope itemtype="https://schema.org/CreativeWork">
-    <meta itemprop="headline" content="Reverse Engineering Memory">
-    <meta itemprop="description" content="Caches, SSDs, and Disks are fundamental to application performance. Here I conduct a set of experiments to isolate and understand these components.">
+    <meta itemprop="headline" content="Effects of Cache on Application Performance">
+    <meta itemprop="description" content="Memory access times play a huge role on performance characteristics of programs. Here I conduct a set of experiments to isolate and understand these effects.">
     <meta itemprop="datePublished" content="2023-05-23T15:23:54-04:00">
     
 
     <div class="page__inner-wrap">
       
         <header>
-          <h1 id="page-title" class="page__title" itemprop="headline">Reverse Engineering Memory
+          <h1 id="page-title" class="page__title" itemprop="headline">Effects of Cache on Application Performance
 </h1>
           
 
@@ -297,7 +297,7 @@
       <span class="page__meta-readtime">
         <i class="far fa-clock" aria-hidden="true"></i>
         
-          5 minute read
+          9 minute read
         
       </span>
     
@@ -309,12 +309,12 @@
 
       <section class="page__content" itemprop="text">
         
-        <p>Caches, SSDs, and Disks are fundamental to application performance. Here I conduct a set of experiments to isolate and understand these components.</p>
+        <p>Memory access times play a huge role on performance characteristics of programs. Here I conduct a set of experiments to isolate and understand these effects.</p>
 
-<hr />
-<p>Memory is absolutely essential in the field of computing. From an automata theory standpoint, it’s the key tool that enables us to reason with context-free and recursively enumerable languages. Beyond the theoretical power memory yields, the performance characteristics of various memory models and techniques heavily influence modern software.</p>
+<h2 id="tldr">tl;dr</h2>
+<p>Memory is absolutely essential in the field of computing. From an automata theory standpoint, it’s the key tool that enables us to reason with context-free and recursively enumerable languages. Beyond the theoretical power memory yields, the behavior of various memory models and techniques heavily influence modern software.</p>
 
-<p>My goal with these experiments is to fill in some of the holes in my knowledge with some hands on analysis with some documentation I can reference in the future.Before diving into the details I’d like to do a bottom-up review of computer memory in general.</p>
+<p>My goal with these experiments is to fill in some of the holes in my knowledge with some hands on analysis with some documentation I can reference in the future. Before diving into the details I’d like to do a bottom-up review of computer memory in general.</p>
 
 <h2 id="types-of-memory">Types of Memory</h2>
 <p>The basic concept of memory in computer is to create a physical representation for data that can be written to and read from.</p>
@@ -435,9 +435,165 @@ and cache access latency is determined by the design and complexity of the cache
 </ol>
 
 <blockquote>
-  <p>All following benchmarks will be run on a single thread of an i9-10980XE processor
-2x32 GB DDR4 Memory @ 2666 MHZ</p>
+  <p>All following benchmarks will be run on a i9-10980XE processor</p>
+
+  <p>2x32 GB DDR4 Memory @ 2666 MHZ</p>
+
+  <p>gcc version 9.4.0 (Ubuntu 9.4.0-1ubuntu1~20.04.1)</p>
+
+  <p><a href="https://github.com/google/benchmark">google benchmarking library</a></p>
 </blockquote>
+
+<h3 id="c-stl-containers">C++ STL Containers</h3>
+
+<p>The first place I want to look at the performance impacts of CPU caching is within the space of C++ Data Structures. In a traditional DSA class, performance considerations for an algorithm are solely based on the asymptotic runtime behavior. This is shown to be a very simplistic model and doesn’t convey much information about the runtime characteristics related to the host architecture.</p>
+
+<p>In my tests, I will measure the lookup time for a particular integer key value pair across a <code class="highlighter-rouge">std::vector&lt;pair&lt;int, int&gt;&gt;</code>, <code class="highlighter-rouge">std::map&lt;int, int&gt;</code>, <code class="highlighter-rouge">std::unordered_map&lt;int, int&gt;</code>. Each of the collections will be populated with n ascending integers. For testing, a single randomly generated element will be queried and a lookup will be executed: The benchmarking utility will repeat this operating many times to acquire a statistically significant estimate for the true runtime. This means there will be a guaranteed hit in the container, but at an arbitrary point to give a good estimate for average runtime.</p>
+
+<figure class="highlight"><pre><code class="language-c--" data-lang="c++"><span class="cp">#include</span> <span class="cpf">&lt;unordered_map&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;map&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;vector&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;random&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;algorithm&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;benchmark/benchmark.h&gt;</span><span class="cp">
+</span>
+<span class="k">const</span> <span class="kt">int</span> <span class="n">r</span> <span class="o">=</span> <span class="mi">23</span><span class="p">;</span>
+<span class="c1">// Function to generate a random integer within a range</span>
+<span class="kt">int</span> <span class="nf">generateRandomInt</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">mt19937</span><span class="o">&amp;</span> <span class="n">gen</span><span class="p">,</span> <span class="kt">int</span> <span class="n">min</span><span class="p">,</span> <span class="kt">int</span> <span class="n">max</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">uniform_int_distribution</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">distribution</span><span class="p">(</span><span class="n">min</span><span class="p">,</span> <span class="n">max</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">distribution</span><span class="p">(</span><span class="n">gen</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-c--" data-lang="c++"><span class="c1">// Benchmark function to measure the lookup time for a random element in an unordered_map</span>
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">BM_UnorderedMapLookup</span><span class="p">(</span><span class="n">benchmark</span><span class="o">::</span><span class="n">State</span><span class="o">&amp;</span> <span class="n">state</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Generate an unordered_map of the specified size</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">unordered_map</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span> <span class="kt">int</span><span class="o">&gt;</span> <span class="n">myMap</span><span class="p">;</span>
+    <span class="k">const</span> <span class="kt">int</span> <span class="n">mapSize</span> <span class="o">=</span> <span class="n">state</span><span class="p">.</span><span class="n">range</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">mapSize</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">myMap</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c1">// Random number generator</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">random_device</span> <span class="n">rd</span><span class="p">;</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">mt19937</span> <span class="n">gen</span><span class="p">(</span><span class="n">rd</span><span class="p">());</span>
+
+    <span class="c1">// Perform lookup benchmarks</span>
+    <span class="k">for</span> <span class="p">(</span><span class="k">auto</span> <span class="n">_</span> <span class="o">:</span> <span class="n">state</span><span class="p">)</span> <span class="p">{</span>
+        <span class="c1">// Generate a random key within the range of the map</span>
+        <span class="kt">int</span> <span class="n">randomKey</span> <span class="o">=</span> <span class="n">generateRandomInt</span><span class="p">(</span><span class="n">gen</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">mapSize</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span>
+        
+        <span class="c1">// Perform the lookup</span>
+        <span class="k">auto</span> <span class="n">it</span> <span class="o">=</span> <span class="n">myMap</span><span class="p">.</span><span class="n">find</span><span class="p">(</span><span class="n">randomKey</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">it</span> <span class="o">!=</span> <span class="n">myMap</span><span class="p">.</span><span class="n">end</span><span class="p">())</span> <span class="p">{</span>
+            <span class="n">benchmark</span><span class="o">::</span><span class="n">DoNotOptimize</span><span class="p">(</span><span class="n">it</span><span class="o">-&gt;</span><span class="n">second</span><span class="p">);</span>  <span class="c1">// Prevent the compiler from optimizing the lookup away</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+<span class="n">BENCHMARK</span><span class="p">(</span><span class="n">BM_UnorderedMapLookup</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">Range</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span> <span class="o">&lt;&lt;</span> <span class="n">r</span><span class="p">);</span>  <span class="c1">// Vary the map size from 8 to 8192</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-c--" data-lang="c++"><span class="c1">// Benchmark function to measure the lookup time for a random element in a map</span>
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">BM_MapLookup</span><span class="p">(</span><span class="n">benchmark</span><span class="o">::</span><span class="n">State</span><span class="o">&amp;</span> <span class="n">state</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Generate a map of the specified size</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">map</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span> <span class="kt">int</span><span class="o">&gt;</span> <span class="n">myMap</span><span class="p">;</span>
+    <span class="k">const</span> <span class="kt">int</span> <span class="n">mapSize</span> <span class="o">=</span> <span class="n">state</span><span class="p">.</span><span class="n">range</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">mapSize</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">myMap</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c1">// Random number generator</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">random_device</span> <span class="n">rd</span><span class="p">;</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">mt19937</span> <span class="n">gen</span><span class="p">(</span><span class="n">rd</span><span class="p">());</span>
+
+    <span class="c1">// Perform lookup benchmarks</span>
+    <span class="k">for</span> <span class="p">(</span><span class="k">auto</span> <span class="n">_</span> <span class="o">:</span> <span class="n">state</span><span class="p">)</span> <span class="p">{</span>
+        <span class="c1">// Generate a random key within the range of the map</span>
+        <span class="kt">int</span> <span class="n">randomKey</span> <span class="o">=</span> <span class="n">generateRandomInt</span><span class="p">(</span><span class="n">gen</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">mapSize</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span>
+        
+        <span class="c1">// Perform the lookup</span>
+        <span class="k">auto</span> <span class="n">it</span> <span class="o">=</span> <span class="n">myMap</span><span class="p">.</span><span class="n">find</span><span class="p">(</span><span class="n">randomKey</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">it</span> <span class="o">!=</span> <span class="n">myMap</span><span class="p">.</span><span class="n">end</span><span class="p">())</span> <span class="p">{</span>
+            <span class="n">benchmark</span><span class="o">::</span><span class="n">DoNotOptimize</span><span class="p">(</span><span class="n">it</span><span class="o">-&gt;</span><span class="n">second</span><span class="p">);</span>  <span class="c1">// Prevent the compiler from optimizing the lookup away</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+<span class="n">BENCHMARK</span><span class="p">(</span><span class="n">BM_MapLookup</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">Range</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span> <span class="o">&lt;&lt;</span> <span class="n">r</span><span class="p">);</span>  <span class="c1">// Vary the map size from 8 to 8192</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-c--" data-lang="c++"><span class="c1">// Benchmark function to measure the lookup time for a random element in a vector of pairs</span>
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">BM_VectorLookup</span><span class="p">(</span><span class="n">benchmark</span><span class="o">::</span><span class="n">State</span><span class="o">&amp;</span> <span class="n">state</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Generate a vector of pairs of the specified size</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span> <span class="kt">int</span><span class="o">&gt;&gt;</span> <span class="n">myVector</span><span class="p">;</span>
+    <span class="k">const</span> <span class="kt">int</span> <span class="n">vectorSize</span> <span class="o">=</span> <span class="n">state</span><span class="p">.</span><span class="n">range</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">vectorSize</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">myVector</span><span class="p">.</span><span class="n">emplace_back</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="c1">// Random number generator</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">random_device</span> <span class="n">rd</span><span class="p">;</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">mt19937</span> <span class="n">gen</span><span class="p">(</span><span class="n">rd</span><span class="p">());</span>
+
+    <span class="c1">// Perform lookup benchmarks</span>
+    <span class="k">for</span> <span class="p">(</span><span class="k">auto</span> <span class="n">_</span> <span class="o">:</span> <span class="n">state</span><span class="p">)</span> <span class="p">{</span>
+        <span class="c1">// Generate a random key within the range of the vector</span>
+        <span class="kt">int</span> <span class="n">randomKey</span> <span class="o">=</span> <span class="n">generateRandomInt</span><span class="p">(</span><span class="n">gen</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">vectorSize</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span>
+        
+        <span class="c1">// Perform the lookup</span>
+        <span class="k">auto</span> <span class="n">it</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">find_if</span><span class="p">(</span><span class="n">myVector</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span> <span class="n">myVector</span><span class="p">.</span><span class="n">end</span><span class="p">(),</span> <span class="p">[</span><span class="n">randomKey</span><span class="p">](</span><span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span> <span class="kt">int</span><span class="o">&gt;&amp;</span> <span class="n">pair</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="n">pair</span><span class="p">.</span><span class="n">first</span> <span class="o">==</span> <span class="n">randomKey</span><span class="p">;</span>
+        <span class="p">});</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">it</span> <span class="o">!=</span> <span class="n">myVector</span><span class="p">.</span><span class="n">end</span><span class="p">())</span> <span class="p">{</span>
+            <span class="n">benchmark</span><span class="o">::</span><span class="n">DoNotOptimize</span><span class="p">(</span><span class="n">it</span><span class="o">-&gt;</span><span class="n">second</span><span class="p">);</span>  <span class="c1">// Prevent the compiler from optimizing the lookup away</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+<span class="n">BENCHMARK</span><span class="p">(</span><span class="n">BM_VectorLookup</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">Range</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span> <span class="o">&lt;&lt;</span> <span class="mi">15</span><span class="p">);</span>  <span class="c1">// Vary the vector size from 8 to 8192</span>
+
+<span class="n">BENCHMARK_MAIN</span><span class="p">();</span></code></pre></figure>
+
+<p>Benchmark Results</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Run on (36 X 3000 MHz CPU s)
+CPU Caches:
+  L1 Data 32 KiB (x18)
+  L1 Instruction 32 KiB (x18)
+  L2 Unified 1024 KiB (x18)
+  L3 Unified 25344 KiB (x1)
+Load Average: 0.85, 0.97, 0.80
+------------------------------------------------------------------------
+Benchmark                              Time             CPU   Iterations
+------------------------------------------------------------------------
+BM_UnorderedMapLookup/8               130 ns          130 ns      5387512
+BM_UnorderedMapLookup/64              130 ns          130 ns      5404746
+BM_UnorderedMapLookup/512             130 ns          130 ns      5375510
+BM_UnorderedMapLookup/4096            135 ns          135 ns      5189464
+BM_UnorderedMapLookup/32768           146 ns          146 ns      4797892
+BM_UnorderedMapLookup/262144          250 ns          250 ns      2756256
+BM_UnorderedMapLookup/2097152         363 ns          363 ns      1914136
+BM_UnorderedMapLookup/16777216        415 ns          415 ns      1607616
+BM_UnorderedMapLookup/33554432        426 ns          426 ns      1641346
+BM_MapLookup/8                        147 ns          147 ns      4760940
+BM_MapLookup/64                       203 ns          203 ns      3440211
+BM_MapLookup/512                      269 ns          269 ns      2606323
+BM_MapLookup/4096                     328 ns          328 ns      2132072
+BM_MapLookup/32768                    437 ns          437 ns      1542210
+BM_MapLookup/262144                   708 ns          708 ns       845495
+BM_MapLookup/2097152                 1255 ns         1255 ns       539855
+BM_MapLookup/8388608                 1612 ns         1612 ns       437448
+BM_VectorLookup/8                     115 ns          115 ns      6063751
+BM_VectorLookup/64                    267 ns          267 ns      2528761
+BM_VectorLookup/512                  1507 ns         1507 ns       464580
+BM_VectorLookup/4096                11462 ns        11462 ns        60628
+BM_VectorLookup/32768               90815 ns        90815 ns         8023
+BM_VectorLookup/262144             727579 ns       727579 ns         1127
+</code></pre></div></div>
+
+<p>Plots:</p>
+
+<p><img src="/assets/images/all_cache.png" alt="all plots" /></p>
+
+<p><img src="/assets/images/map_cache.png" alt="map plots" /></p>
+
+<p><img src="/assets/images/hash_cache.png" alt="hashmap plot" /></p>
+
+<p>(Sorry if you’re seeing this at an intermediate stage; I don’t have any words just yet – just data)</p>
 
         
       </section>
@@ -457,7 +613,7 @@ and cache access latency is determined by the design and complexity of the cache
       <section class="page__share">
   
 
-  <a href="https://twitter.com/intent/tweet?text=Reverse+Engineering+Memory%20http%3A%2F%2Flocalhost%3A4000%2Fsystems%2Fembedded%2F2023%2F05%2F23%2Fcache-exploration.html" class="btn btn--twitter" onclick="window.open(this.href, 'window', 'left=20,top=20,width=500,height=500,toolbar=1,resizable=0'); return false;" title="Share on Twitter"><i class="fab fa-fw fa-twitter" aria-hidden="true"></i><span> Twitter</span></a>
+  <a href="https://twitter.com/intent/tweet?text=Effects+of+Cache+on+Application+Performance%20http%3A%2F%2Flocalhost%3A4000%2Fsystems%2Fembedded%2F2023%2F05%2F23%2Fcache-exploration.html" class="btn btn--twitter" onclick="window.open(this.href, 'window', 'left=20,top=20,width=500,height=500,toolbar=1,resizable=0'); return false;" title="Share on Twitter"><i class="fab fa-fw fa-twitter" aria-hidden="true"></i><span> Twitter</span></a>
 
   <a href="https://www.facebook.com/sharer/sharer.php?u=http%3A%2F%2Flocalhost%3A4000%2Fsystems%2Fembedded%2F2023%2F05%2F23%2Fcache-exploration.html" class="btn btn--facebook" onclick="window.open(this.href, 'window', 'left=20,top=20,width=500,height=500,toolbar=1,resizable=0'); return false;" title="Share on Facebook"><i class="fab fa-fw fa-facebook" aria-hidden="true"></i><span> Facebook</span></a>
 
