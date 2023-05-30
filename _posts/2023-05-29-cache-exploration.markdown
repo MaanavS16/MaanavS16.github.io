@@ -1,6 +1,6 @@
 ---
 layout: single
-title:  "Effects of Cache on Application Performance"
+title:  "Predicting effects of CPU Cache on Application Performance"
 date:   2023-05-29 15:23:54 -0400
 categories: systems embedded
 ---
