@@ -11,6 +11,6 @@ My technical interests span Programming Languages, High Performance Computing, a
 
 Professionally, I'm currently interning at [SIG](https://sig.com/) as a Software Engineer and I've previously worked at [AWS](https://aws.amazon.com/apprunner/) on App Runner and [Cash App](https://block.xyz/) on Recommendation ML. I have extensive experience building performant, scalable, and reliable systems that have served hundreds of millions of customers and I'm always keen to make an impact!
 
-In my free-time, I enjoy solving algorithmic puzzles on [Leetcode](https://leetcode.com/MaanavS/), Codeforces, and Kattis and listening to podcasts (big fan of [Signals and Threads](https://signalsandthreads.com/)). I also compete in the International Collegiate Programming Contest (ICPC) for UNC.
+In my free-time, I enjoy solving algorithmic puzzles on [Leetcode](https://leetcode.com/MaanavS/), Codeforces, and Kattis and listening to podcasts (big fan of [Signals and Threads](https://signalsandthreads.com/) and [ADSP](https://adspthepodcast.com/about/)). I also compete in the International Collegiate Programming Contest (ICPC) for UNC.
 
 Feel free to read my [blog](/blog/) or [education](/education/) for a glimpse at my work!

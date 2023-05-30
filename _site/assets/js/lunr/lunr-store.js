@@ -6,7 +6,7 @@ var store = [{
         "teaser": null
       },{
         "title": "Effects of Cache on Application Performance",
-        "excerpt":"Memory access times play a huge role on performance characteristics of programs. Here I conduct a set of experiments to isolate and understand these effects. tl;dr Memory is absolutely essential in the field of computing. From an automata theory standpoint, it’s the key tool that enables us to reason with...","categories": ["systems","embedded"],
+        "excerpt":"Memory access times play a huge role on performance characteristics of programs. Here I conduct a set of experiments to isolate and understand these effects. Introduction Memory is absolutely essential in the field of computing. From an automata theory standpoint, it’s the key tool that enables us to reason with...","categories": ["systems","embedded"],
         "tags": [],
         "url": "/systems/embedded/2023/05/23/cache-exploration.html",
         "teaser": null
