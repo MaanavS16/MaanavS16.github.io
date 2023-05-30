@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.7">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2023-05-30T01:01:15-04:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Maanav Singh</title><subtitle>Maanav Singh&apos;s Personal Website</subtitle><author><name>Maanav Singh</name><email>msingh2@unc.edu</email></author><entry><title type="html">Effects of Cache on Application Performance</title><link href="http://localhost:4000/systems/embedded/2023/05/23/cache-exploration.html" rel="alternate" type="text/html" title="Effects of Cache on Application Performance" /><published>2023-05-23T15:23:54-04:00</published><updated>2023-05-23T15:23:54-04:00</updated><id>http://localhost:4000/systems/embedded/2023/05/23/cache-exploration</id><content type="html" xml:base="http://localhost:4000/systems/embedded/2023/05/23/cache-exploration.html">&lt;p&gt;Memory access times play a huge role on performance characteristics of programs. Here I conduct a set of experiments to isolate and understand these effects.&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.8.7">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2023-05-30T03:47:34-04:00</updated><id>http://localhost:4000/feed.xml</id><title type="html">Maanav Singh</title><subtitle>Maanav Singh&apos;s Personal Website</subtitle><author><name>Maanav Singh</name><email>msingh2@unc.edu</email></author><entry><title type="html">Effects of Cache on Application Performance</title><link href="http://localhost:4000/systems/embedded/2023/05/29/cache-exploration.html" rel="alternate" type="text/html" title="Effects of Cache on Application Performance" /><published>2023-05-29T15:23:54-04:00</published><updated>2023-05-29T15:23:54-04:00</updated><id>http://localhost:4000/systems/embedded/2023/05/29/cache-exploration</id><content type="html" xml:base="http://localhost:4000/systems/embedded/2023/05/29/cache-exploration.html">&lt;p&gt;Memory access times play a huge role on performance characteristics of programs. Here I conduct a set of experiments to isolate and understand these effects.&lt;/p&gt;
 
 &lt;h2 id=&quot;introduction&quot;&gt;Introduction&lt;/h2&gt;
 &lt;p&gt;Memory is absolutely essential in the field of computing. From an automata theory standpoint, it’s the key tool that enables us to reason with context-free and recursively enumerable languages. Beyond the theoretical power memory yields, the behavior of various memory models and techniques heavily influence modern software.&lt;/p&gt;
@@ -6,7 +6,7 @@
 &lt;p&gt;My goal with these experiments is to fill in some of the holes in my knowledge with some hands on analysis and some documentation I can reference in the future. Before diving into the details I’d like to do a bottom-up review of computer memory in general.&lt;/p&gt;
 
 &lt;h2 id=&quot;types-of-memory&quot;&gt;Types of Memory&lt;/h2&gt;
-&lt;p&gt;The basic concept of memory in computer is to create a physical representation for data that can be written to and read from.&lt;/p&gt;
+&lt;p&gt;The basic concept of memory in computer is to create a physical representation for data that can be written to and read from. Pretty simple concept, but the physical design and fabrication is incredibly complicated. The most common forms of memory that you’ll encounter while working with computers are listed in the following table.&lt;/p&gt;
 
 &lt;table&gt;
   &lt;thead&gt;
@@ -53,11 +53,17 @@
 
 &lt;h2 id=&quot;cache-layout&quot;&gt;Cache Layout:&lt;/h2&gt;
 
-&lt;p&gt;The Von Neumann architecture prescribes a unified memory store that both contains instructions and application data. While this is mostly true, as the system memory is unified, there exists a lower latency intermediate memory within the CPU that contains a portion of the memory space. The CPU can often avoid making costly accesses to the&lt;/p&gt;
-
-&lt;p&gt;A cache essentially acts as a lower latency intermediary between the CPU and system memory (or even another slower cache). It saves data entries that are likely to be accessed in the future and makes them available for quick access. When a particular memory addresses is trying to resolved, the cache is first checked and can potentially massively decrease access latency.&lt;/p&gt;
+&lt;p&gt;The Von Neumann architecture prescribes a unified memory store that both contains instructions and application data. While this is mostly true, as the system memory is unified, there exists a lower latency intermediate memory within the CPU that contains a portion of the memory space called the Cache. The CPU can often avoid making costly accesses to the main memory by taking advantage of this. The cache saves data entries that are likely to be accessed in the future and makes them available for quick access. When a particular memory addresses is trying to resolved, the cache is first checked and can potentially massively decrease access latency.&lt;/p&gt;
 
 &lt;p&gt;This cache differs from the main memory in more ways than just speed however. The cache is designed to determine what’s “likely to be accessed in the future”. The strategy for completing this determination varies between caches and depends on the access patterns and configuration.&lt;/p&gt;
+
+&lt;p&gt;There are two guiding observations that determine the high level design of caches.&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;If an address is accessed, then adjacent elements are also likely to be accessed (&lt;a href=&quot;https://en.wikipedia.org/wiki/Locality_of_reference&quot;&gt;Spatial Locality&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;If an address is accessed, then that element is likely to be accessed in the future (&lt;a href=&quot;https://en.wikipedia.org/wiki/Locality_of_reference&quot;&gt;Temporal Locality&lt;/a&gt;)&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;I won’t go into much detail beyond these fairly straightforward definitions, but the influence of these two observations should hopefully be evident moving forward.&lt;/p&gt;
 
 &lt;h3 id=&quot;should-instructions-and-data-be-cached-separately&quot;&gt;Should instructions and data be cached separately?&lt;/h3&gt;
 
@@ -137,15 +143,17 @@
 &lt;p&gt;average_latency = hit% * (cache access latency) + (1-hit%) * (memory access latency)&lt;/p&gt;
 
 &lt;p&gt;Where, hit% is determined by the cache type, strategy, and access patterns
-and cache access latency is determined by the design and complexity of the cache&lt;/p&gt;
+and cache access latency is determined by the design and complexity of the cache.&lt;/p&gt;
+
+&lt;p&gt;This overview of the operating of direct map and set associative caches neglects to review the procedure for writing to memory, since the focus on the following sections is read performance; however, it’s important to understand there are mechanisms for marking cache entries as unusable or “dirty” after they’ve been overwritten or modified. There are also challenges with &lt;a href=&quot;https://en.wikipedia.org/wiki/Cache_coherence&quot;&gt;Cache Coherence&lt;/a&gt; or making sure that all caches contain correct data even across different CPU cores. This won’t be explored here, but is definitely worth reading into.&lt;/p&gt;
 
 &lt;h2 id=&quot;jumping-into-some-code&quot;&gt;Jumping into some code&lt;/h2&gt;
 
 &lt;p&gt;After the introduction to basic cache structures, I’ve set 2 tasks for myself.&lt;/p&gt;
 
 &lt;ol&gt;
-  &lt;li&gt;Explore, the effect of caches on C++ STL data structures&lt;/li&gt;
-  &lt;li&gt;Determine the cache layout for my processor&lt;/li&gt;
+  &lt;li&gt;Try to make a perfect situation for the cache to shine in terms of performance.&lt;/li&gt;
+  &lt;li&gt;Explore the impact of a bad access pattern on performance, and try to model and predict that impact.&lt;/li&gt;
 &lt;/ol&gt;
 
 &lt;div class=&quot;notice&quot;&gt;
@@ -160,13 +168,50 @@ and cache access latency is determined by the design and complexity of the cache
 
 &lt;h3 id=&quot;c-stl-containers&quot;&gt;C++ STL Containers&lt;/h3&gt;
 
-&lt;p&gt;The primary place I want to look at the performance impacts of CPU caching is within the space of C++ Data Structures. In a traditional DSA class, performance considerations for an algorithm are solely based on the asymptotic runtime behavior. This is shown to be a very simplistic model and doesn’t convey much information about the runtime characteristics related to the host architecture.&lt;/p&gt;
+&lt;p&gt;I will be using various C++ standard STL containers to create a key-value store as my case study for cache performance. In a basic Data Structures setting, performance considerations for an algorithm are solely based on the asymptotic runtime behavior. This is shown to be a very simplistic model and doesn’t convey much information about the runtime characteristics related to the host architecture.&lt;/p&gt;
 
 &lt;p&gt;In my tests, I will measure the lookup time for a particular integer key value pair across &lt;code class=&quot;highlighter-rouge&quot;&gt;std::vector&amp;lt;std::pair&amp;lt;int, int&amp;gt;&amp;gt;&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;std::map&amp;lt;int, int&amp;gt;&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;std::unordered_map&amp;lt;int, int&amp;gt;&lt;/code&gt;. Each of these collections will be initialized with ascending keys and a matching 32 bit integer (8 bytes per element).&lt;/p&gt;
 
+&lt;p&gt;As a quick reminder, these are the following best, average, and worst case lookup algorithm time complexities.&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Algorithm&lt;/th&gt;
+      &lt;th&gt;Best&lt;/th&gt;
+      &lt;th&gt;Average&lt;/th&gt;
+      &lt;th&gt;Worst&lt;/th&gt;
+      &lt;th&gt;Notes&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;std::unordered_map::find&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;O(1)&lt;/td&gt;
+      &lt;td&gt;O(1)&lt;/td&gt;
+      &lt;td&gt;O(1)&lt;/td&gt;
+      &lt;td&gt;This is a hashmap&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;std::map::find&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;O(log(n))&lt;/td&gt;
+      &lt;td&gt;O(log(n))&lt;/td&gt;
+      &lt;td&gt;O(log(n))&lt;/td&gt;
+      &lt;td&gt;This is a treemap&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;std::find_if&lt;/code&gt; on &lt;code class=&quot;highlighter-rouge&quot;&gt;vector&amp;lt;pair&amp;lt;int, int&amp;gt;&amp;gt;&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;O(1)&lt;/td&gt;
+      &lt;td&gt;O(n)&lt;/td&gt;
+      &lt;td&gt;O(n)&lt;/td&gt;
+      &lt;td&gt;This is a vector of pairs (Linear search needed)&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
 &lt;h4 id=&quot;optimal-setup&quot;&gt;Optimal Setup&lt;/h4&gt;
 
-&lt;p&gt;Initially, I want to gauge the lookup time for an ideal situation (ie where the cache is maximally effective). This means that the same element will be queried repeatedly so that the cache is always “hot”. Furthermore, the data structures will be initialized in a way that avoid dynamic reallocation and collisions, typically with the &lt;code class=&quot;highlighter-rouge&quot;&gt;reserve&lt;/code&gt; routine prior to benchmarking.&lt;/p&gt;
+&lt;p&gt;Initially, I want to gauge the lookup time for an ideal situation (ie where the cache is maximally effective). This can be easily accomplished by repeatedly searching for the same element so that the cache is always “hot”. Furthermore, the data structures will be initialized in a way that avoids dynamic reallocation and collisions, typically with the &lt;code class=&quot;highlighter-rouge&quot;&gt;reserve&lt;/code&gt; routine prior to benchmarking.&lt;/p&gt;
 
 &lt;p&gt;First, I will define a benchmarking fixture which defines the collection and prevents repeated initialization of the containers (benchmarking is very slow without this). The below code is the Bench setup for the &lt;code class=&quot;highlighter-rouge&quot;&gt;std::unordered_map&lt;/code&gt;.&lt;/p&gt;
 
@@ -179,7 +224,7 @@ and cache access latency is determined by the design and complexity of the cache
     &lt;span class=&quot;c1&quot;&gt;// populate the unordered_map&lt;/span&gt;
     &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;state&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;range&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;++&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
       &lt;span class=&quot;n&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
 
   &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TearDown&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;benchmark&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;State&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&quot;cm&quot;&gt;/*state*/&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
     &lt;span class=&quot;c1&quot;&gt;// Clear the unordered_map&lt;/span&gt;
@@ -190,7 +235,7 @@ and cache access latency is determined by the design and complexity of the cache
 
 &lt;hr /&gt;
 
-&lt;p&gt;Ok now that the underlying container has been initialized, a simple routine is written to poll the same arbitrary number from the container. This is automatically timed by the benchmark library for size over the interval [8, 8 * 2^24].&lt;/p&gt;
+&lt;p&gt;Ok now that the underlying container has been initialized, a simple routine is written to poll the same arbitrary number from the container. This is automatically timed by the benchmark library with exponentially increasing sizes bounded by 8 * 2^24&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-c--&quot; data-lang=&quot;c++&quot;&gt;&lt;span class=&quot;n&quot;&gt;BENCHMARK_DEFINE_F&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;UnorderedMapFixture&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;BM_UnorderedMapLookup&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;benchmark&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;State&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;state&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
   
@@ -241,9 +286,9 @@ UnorderedMapFixture/BM_UnorderedMapLookup/134217728       88.0 ns         88.0 n
 
 &lt;p&gt;These results look great! This behavior almost perfectly models the asympototic behavior of the functions:&lt;/p&gt;
 &lt;ul&gt;
-  &lt;li&gt;The unordered map has a constant runtime: It takes ~85ns to lookup an element at both 8 elements and 100 million elements&lt;/li&gt;
-  &lt;li&gt;The map has a log runtime. This manifests as a linear plot when the x-axis is log scaled.&lt;/li&gt;
-  &lt;li&gt;The map has a log runtime. This manifests as an exponential plot when the x-axis is log scaled.&lt;/li&gt;
+  &lt;li&gt;The unordered map has a O(1) runtime: It takes ~85ns to lookup an element at both 8 elements and 100 million elements&lt;/li&gt;
+  &lt;li&gt;The map has a O(log(n)) runtime. This manifests as a linear plot when the x-axis is log scaled.&lt;/li&gt;
+  &lt;li&gt;The vector has a O(n) runtime. This manifests as an exponential plot when the x-axis is log scaled.&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;hr /&gt;
@@ -255,7 +300,48 @@ UnorderedMapFixture/BM_UnorderedMapLookup/134217728       88.0 ns         88.0 n
 
 &lt;p&gt;&lt;img src=&quot;/assets/images/cache_bms/eq1.png&quot; alt=&quot;hit eq&quot; /&gt;&lt;/p&gt;
 
-&lt;p&gt;This situation is likely bordering artificially inefficient, since it’s rare for memory accesses to be completely random, but it should still illustrate what happens when the size of the collection exceeds the bounds of a cache.&lt;/p&gt;</content><author><name>Maanav Singh</name><email>msingh2@unc.edu</email></author><category term="systems" /><category term="embedded" /><summary type="html">Memory access times play a huge role on performance characteristics of programs. Here I conduct a set of experiments to isolate and understand these effects.</summary></entry><entry><title type="html">Rucket: Customizable In-Order Reliable Data Transport</title><link href="http://localhost:4000/systems/networking/2023/05/22/rucket.html" rel="alternate" type="text/html" title="Rucket: Customizable In-Order Reliable Data Transport" /><published>2023-05-22T15:23:54-04:00</published><updated>2023-05-22T15:23:54-04:00</updated><id>http://localhost:4000/systems/networking/2023/05/22/rucket</id><content type="html" xml:base="http://localhost:4000/systems/networking/2023/05/22/rucket.html">&lt;p&gt;Reliable and fast data transport is hard. Let’s see if I can make it any easier&lt;/p&gt;
+&lt;p&gt;Where B is the bytes in the cache and the data structure respectively&lt;/p&gt;
+
+&lt;p&gt;This situation is likely bordering artificially inefficient, since it’s rare for memory accesses to be completely random, but it should still illustrate what happens when the size of the collection exceeds the bounds of a cache. In order to test under these new circumstances, the same benchmarking code will be used with the addition of &lt;a href=&quot;https://cplusplus.com/reference/random/mt19937/&quot;&gt;Random Number Generation&lt;/a&gt; for determining what number to poll in the collection.&lt;/p&gt;
+
+&lt;p&gt;Before, the benchmarks are run I want to do some napkin math to estimate the number of elements at which the cache will become saturated.&lt;/p&gt;
+
+&lt;p&gt;Since each k-v pair element contains 2 32-bit integers, the entire element will be 8 bytes. The L2 cache contains 1024 kb (per core), which is the most relevant due to the process running on a single core.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/cache_bms/EQ2.png&quot; alt=&quot;saturated size&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Given the calculations above, we estimate each container will fully saturate the L2 cache at around 1.3E5 elements. In our plots this number will be added as a horizontal line.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/cache_bms/realistic.png&quot; alt=&quot;realistic plots&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;These results are super interesting!&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;The good news is that our saturation point calculations seems to be spot on!&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;For the Unordered map, the initial lookup time was hovering right around 120 ns until around 100k elements where the latency began to increase until it eventually settled at around 450ns as the cache became extremely ineffective.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p class=&quot;notice&quot;&gt;Note: The lookup time went up from around 85ns to 120ns due to the addition of computing a pseudo-random number. This is a constant offset and doesn’t effect the analysis&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Similarly for the map, the log scaled plot has an initially low slope which suddenly increases at right around the saturation point. The change in slope directly demonstrates the increase in access latency&lt;/li&gt;
+  &lt;li&gt;This indicates that &lt;strong&gt;we can definitely predict the impact of CPU cache and create really solid estimates for runtime!&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The bad news is that the vector lookup behavior seems completely unchanged. However, some research reveals that the underlying data for a &lt;code class=&quot;highlighter-rouge&quot;&gt;pair&amp;lt;int, int&amp;gt;&lt;/code&gt; is allocated on the heap and the vector contains the pointer to the underlying heap region. This does explain why the saturation point isn’t a great model for point of declining performance. Making frequent accesses to the heap to dereference pointers may have had a large impact on the effectiveness of the cache’s &lt;a href=&quot;https://en.wikipedia.org/wiki/Locality_of_reference&quot;&gt;spatial locality&lt;/a&gt; and the boundary between good and bad cache utilization is not as clear or significant as with the other two collections. This also brings to light a good lesson while exploring the impact of architecture on application performance: &lt;strong&gt;Sometimes it gets complicated to exactly predict performance due to the sheer number of factors at play&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;Thanks for giving this a read. I’d love to hear your thoughts so feel free to shoot me an email!&lt;/p&gt;
+
+&lt;h2 id=&quot;tldr&quot;&gt;tl;dr&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;There are a lot of different kinds of memory. The fast stuff is expensive, so we need to use it well!&lt;/li&gt;
+  &lt;li&gt;We use the fast stuff to design a special memory store between the CPU and main memory called cache&lt;/li&gt;
+  &lt;li&gt;This cache can be designed in different ways each with it’s own tradeoffs&lt;/li&gt;
+  &lt;li&gt;Modern processors have layers of different chained cache’s with varying properties.&lt;/li&gt;
+  &lt;li&gt;If our access patterns are perfectly suited to the cache, then our algorithms will behave very similar to their average asymptotic runtime&lt;/li&gt;
+  &lt;li&gt;The access pattern is usually not that great, which introduces interesting and sometimes predictable changes to our performance&lt;/li&gt;
+&lt;/ul&gt;</content><author><name>Maanav Singh</name><email>msingh2@unc.edu</email></author><category term="systems" /><category term="embedded" /><summary type="html">Memory access times play a huge role on performance characteristics of programs. Here I conduct a set of experiments to isolate and understand these effects.</summary></entry><entry><title type="html">Rucket: Customizable In-Order Reliable Data Transport</title><link href="http://localhost:4000/systems/networking/2023/05/22/rucket.html" rel="alternate" type="text/html" title="Rucket: Customizable In-Order Reliable Data Transport" /><published>2023-05-22T15:23:54-04:00</published><updated>2023-05-22T15:23:54-04:00</updated><id>http://localhost:4000/systems/networking/2023/05/22/rucket</id><content type="html" xml:base="http://localhost:4000/systems/networking/2023/05/22/rucket.html">&lt;p&gt;Reliable and fast data transport is hard. Let’s see if I can make it any easier&lt;/p&gt;
 
 &lt;h2 id=&quot;whats-there-to-improve&quot;&gt;What’s there to improve?&lt;/h2&gt;
 

@@ -23,7 +23,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Maanav Singh">
 <meta property="og:title" content="Effects of Cache on Application Performance">
-<meta property="og:url" content="http://localhost:4000/systems/embedded/2023/05/23/cache-exploration.html">
+<meta property="og:url" content="http://localhost:4000/systems/embedded/2023/05/29/cache-exploration.html">
 
 
   <meta property="og:description" content="Memory access times play a huge role on performance characteristics of programs. Here I conduct a set of experiments to isolate and understand these effects.">
@@ -34,14 +34,14 @@
 
 
 
-  <meta property="article:published_time" content="2023-05-23T15:23:54-04:00">
+  <meta property="article:published_time" content="2023-05-29T15:23:54-04:00">
 
 
 
 
 
 
-<link rel="canonical" href="http://localhost:4000/systems/embedded/2023/05/23/cache-exploration.html">
+<link rel="canonical" href="http://localhost:4000/systems/embedded/2023/05/29/cache-exploration.html">
 
 
 
@@ -275,7 +275,7 @@
   <article class="page" itemscope itemtype="https://schema.org/CreativeWork">
     <meta itemprop="headline" content="Effects of Cache on Application Performance">
     <meta itemprop="description" content="Memory access times play a huge role on performance characteristics of programs. Here I conduct a set of experiments to isolate and understand these effects.">
-    <meta itemprop="datePublished" content="2023-05-23T15:23:54-04:00">
+    <meta itemprop="datePublished" content="2023-05-29T15:23:54-04:00">
     
 
     <div class="page__inner-wrap">
@@ -297,7 +297,7 @@
       <span class="page__meta-readtime">
         <i class="far fa-clock" aria-hidden="true"></i>
         
-          9 minute read
+          13 minute read
         
       </span>
     
@@ -317,7 +317,7 @@
 <p>My goal with these experiments is to fill in some of the holes in my knowledge with some hands on analysis and some documentation I can reference in the future. Before diving into the details I’d like to do a bottom-up review of computer memory in general.</p>
 
 <h2 id="types-of-memory">Types of Memory</h2>
-<p>The basic concept of memory in computer is to create a physical representation for data that can be written to and read from.</p>
+<p>The basic concept of memory in computer is to create a physical representation for data that can be written to and read from. Pretty simple concept, but the physical design and fabrication is incredibly complicated. The most common forms of memory that you’ll encounter while working with computers are listed in the following table.</p>
 
 <table>
   <thead>
@@ -364,11 +364,17 @@
 
 <h2 id="cache-layout">Cache Layout:</h2>
 
-<p>The Von Neumann architecture prescribes a unified memory store that both contains instructions and application data. While this is mostly true, as the system memory is unified, there exists a lower latency intermediate memory within the CPU that contains a portion of the memory space. The CPU can often avoid making costly accesses to the</p>
-
-<p>A cache essentially acts as a lower latency intermediary between the CPU and system memory (or even another slower cache). It saves data entries that are likely to be accessed in the future and makes them available for quick access. When a particular memory addresses is trying to resolved, the cache is first checked and can potentially massively decrease access latency.</p>
+<p>The Von Neumann architecture prescribes a unified memory store that both contains instructions and application data. While this is mostly true, as the system memory is unified, there exists a lower latency intermediate memory within the CPU that contains a portion of the memory space called the Cache. The CPU can often avoid making costly accesses to the main memory by taking advantage of this. The cache saves data entries that are likely to be accessed in the future and makes them available for quick access. When a particular memory addresses is trying to resolved, the cache is first checked and can potentially massively decrease access latency.</p>
 
 <p>This cache differs from the main memory in more ways than just speed however. The cache is designed to determine what’s “likely to be accessed in the future”. The strategy for completing this determination varies between caches and depends on the access patterns and configuration.</p>
+
+<p>There are two guiding observations that determine the high level design of caches.</p>
+<ol>
+  <li>If an address is accessed, then adjacent elements are also likely to be accessed (<a href="https://en.wikipedia.org/wiki/Locality_of_reference">Spatial Locality</a>)</li>
+  <li>If an address is accessed, then that element is likely to be accessed in the future (<a href="https://en.wikipedia.org/wiki/Locality_of_reference">Temporal Locality</a>)</li>
+</ol>
+
+<p>I won’t go into much detail beyond these fairly straightforward definitions, but the influence of these two observations should hopefully be evident moving forward.</p>
 
 <h3 id="should-instructions-and-data-be-cached-separately">Should instructions and data be cached separately?</h3>
 
@@ -448,15 +454,17 @@
 <p>average_latency = hit% * (cache access latency) + (1-hit%) * (memory access latency)</p>
 
 <p>Where, hit% is determined by the cache type, strategy, and access patterns
-and cache access latency is determined by the design and complexity of the cache</p>
+and cache access latency is determined by the design and complexity of the cache.</p>
+
+<p>This overview of the operating of direct map and set associative caches neglects to review the procedure for writing to memory, since the focus on the following sections is read performance; however, it’s important to understand there are mechanisms for marking cache entries as unusable or “dirty” after they’ve been overwritten or modified. There are also challenges with <a href="https://en.wikipedia.org/wiki/Cache_coherence">Cache Coherence</a> or making sure that all caches contain correct data even across different CPU cores. This won’t be explored here, but is definitely worth reading into.</p>
 
 <h2 id="jumping-into-some-code">Jumping into some code</h2>
 
 <p>After the introduction to basic cache structures, I’ve set 2 tasks for myself.</p>
 
 <ol>
-  <li>Explore, the effect of caches on C++ STL data structures</li>
-  <li>Determine the cache layout for my processor</li>
+  <li>Try to make a perfect situation for the cache to shine in terms of performance.</li>
+  <li>Explore the impact of a bad access pattern on performance, and try to model and predict that impact.</li>
 </ol>
 
 <div class="notice">
@@ -471,13 +479,50 @@ and cache access latency is determined by the design and complexity of the cache
 
 <h3 id="c-stl-containers">C++ STL Containers</h3>
 
-<p>The primary place I want to look at the performance impacts of CPU caching is within the space of C++ Data Structures. In a traditional DSA class, performance considerations for an algorithm are solely based on the asymptotic runtime behavior. This is shown to be a very simplistic model and doesn’t convey much information about the runtime characteristics related to the host architecture.</p>
+<p>I will be using various C++ standard STL containers to create a key-value store as my case study for cache performance. In a basic Data Structures setting, performance considerations for an algorithm are solely based on the asymptotic runtime behavior. This is shown to be a very simplistic model and doesn’t convey much information about the runtime characteristics related to the host architecture.</p>
 
 <p>In my tests, I will measure the lookup time for a particular integer key value pair across <code class="highlighter-rouge">std::vector&lt;std::pair&lt;int, int&gt;&gt;</code>, <code class="highlighter-rouge">std::map&lt;int, int&gt;</code>, <code class="highlighter-rouge">std::unordered_map&lt;int, int&gt;</code>. Each of these collections will be initialized with ascending keys and a matching 32 bit integer (8 bytes per element).</p>
 
+<p>As a quick reminder, these are the following best, average, and worst case lookup algorithm time complexities.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Algorithm</th>
+      <th>Best</th>
+      <th>Average</th>
+      <th>Worst</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="highlighter-rouge">std::unordered_map::find</code></td>
+      <td>O(1)</td>
+      <td>O(1)</td>
+      <td>O(1)</td>
+      <td>This is a hashmap</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">std::map::find</code></td>
+      <td>O(log(n))</td>
+      <td>O(log(n))</td>
+      <td>O(log(n))</td>
+      <td>This is a treemap</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">std::find_if</code> on <code class="highlighter-rouge">vector&lt;pair&lt;int, int&gt;&gt;</code></td>
+      <td>O(1)</td>
+      <td>O(n)</td>
+      <td>O(n)</td>
+      <td>This is a vector of pairs (Linear search needed)</td>
+    </tr>
+  </tbody>
+</table>
+
 <h4 id="optimal-setup">Optimal Setup</h4>
 
-<p>Initially, I want to gauge the lookup time for an ideal situation (ie where the cache is maximally effective). This means that the same element will be queried repeatedly so that the cache is always “hot”. Furthermore, the data structures will be initialized in a way that avoid dynamic reallocation and collisions, typically with the <code class="highlighter-rouge">reserve</code> routine prior to benchmarking.</p>
+<p>Initially, I want to gauge the lookup time for an ideal situation (ie where the cache is maximally effective). This can be easily accomplished by repeatedly searching for the same element so that the cache is always “hot”. Furthermore, the data structures will be initialized in a way that avoids dynamic reallocation and collisions, typically with the <code class="highlighter-rouge">reserve</code> routine prior to benchmarking.</p>
 
 <p>First, I will define a benchmarking fixture which defines the collection and prevents repeated initialization of the containers (benchmarking is very slow without this). The below code is the Bench setup for the <code class="highlighter-rouge">std::unordered_map</code>.</p>
 
@@ -490,7 +535,7 @@ and cache access latency is determined by the design and complexity of the cache
     <span class="c1">// populate the unordered_map</span>
     <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">state</span><span class="p">.</span><span class="n">range</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span>
       <span class="n">map</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span><span class="p">;</span>
-  <span class="p">}</span>
+    <span class="p">}</span>
 
   <span class="kt">void</span> <span class="n">TearDown</span><span class="p">(</span><span class="k">const</span> <span class="o">::</span><span class="n">benchmark</span><span class="o">::</span><span class="n">State</span><span class="o">&amp;</span> <span class="cm">/*state*/</span><span class="p">)</span> <span class="p">{</span>
     <span class="c1">// Clear the unordered_map</span>
@@ -501,7 +546,7 @@ and cache access latency is determined by the design and complexity of the cache
 
 <hr />
 
-<p>Ok now that the underlying container has been initialized, a simple routine is written to poll the same arbitrary number from the container. This is automatically timed by the benchmark library for size over the interval [8, 8 * 2^24].</p>
+<p>Ok now that the underlying container has been initialized, a simple routine is written to poll the same arbitrary number from the container. This is automatically timed by the benchmark library with exponentially increasing sizes bounded by 8 * 2^24</p>
 
 <figure class="highlight"><pre><code class="language-c--" data-lang="c++"><span class="n">BENCHMARK_DEFINE_F</span><span class="p">(</span><span class="n">UnorderedMapFixture</span><span class="p">,</span> <span class="n">BM_UnorderedMapLookup</span><span class="p">)(</span><span class="n">benchmark</span><span class="o">::</span><span class="n">State</span><span class="o">&amp;</span> <span class="n">state</span><span class="p">)</span> <span class="p">{</span>
   
@@ -552,9 +597,9 @@ UnorderedMapFixture/BM_UnorderedMapLookup/134217728       88.0 ns         88.0 n
 
 <p>These results look great! This behavior almost perfectly models the asympototic behavior of the functions:</p>
 <ul>
-  <li>The unordered map has a constant runtime: It takes ~85ns to lookup an element at both 8 elements and 100 million elements</li>
-  <li>The map has a log runtime. This manifests as a linear plot when the x-axis is log scaled.</li>
-  <li>The map has a log runtime. This manifests as an exponential plot when the x-axis is log scaled.</li>
+  <li>The unordered map has a O(1) runtime: It takes ~85ns to lookup an element at both 8 elements and 100 million elements</li>
+  <li>The map has a O(log(n)) runtime. This manifests as a linear plot when the x-axis is log scaled.</li>
+  <li>The vector has a O(n) runtime. This manifests as an exponential plot when the x-axis is log scaled.</li>
 </ul>
 
 <hr />
@@ -566,7 +611,49 @@ UnorderedMapFixture/BM_UnorderedMapLookup/134217728       88.0 ns         88.0 n
 
 <p><img src="/assets/images/cache_bms/eq1.png" alt="hit eq" /></p>
 
-<p>This situation is likely bordering artificially inefficient, since it’s rare for memory accesses to be completely random, but it should still illustrate what happens when the size of the collection exceeds the bounds of a cache.</p>
+<p>Where B is the bytes in the cache and the data structure respectively</p>
+
+<p>This situation is likely bordering artificially inefficient, since it’s rare for memory accesses to be completely random, but it should still illustrate what happens when the size of the collection exceeds the bounds of a cache. In order to test under these new circumstances, the same benchmarking code will be used with the addition of <a href="https://cplusplus.com/reference/random/mt19937/">Random Number Generation</a> for determining what number to poll in the collection.</p>
+
+<p>Before, the benchmarks are run I want to do some napkin math to estimate the number of elements at which the cache will become saturated.</p>
+
+<p>Since each k-v pair element contains 2 32-bit integers, the entire element will be 8 bytes. The L2 cache contains 1024 kb (per core), which is the most relevant due to the process running on a single core.</p>
+
+<p><img src="/assets/images/cache_bms/EQ2.png" alt="saturated size" /></p>
+
+<p>Given the calculations above, we estimate each container will fully saturate the L2 cache at around 1.3E5 elements. In our plots this number will be added as a horizontal line.</p>
+
+<p><img src="/assets/images/cache_bms/realistic.png" alt="realistic plots" /></p>
+
+<p><em>These results are super interesting!</em></p>
+
+<p>The good news is that our saturation point calculations seems to be spot on!</p>
+<ul>
+  <li>For the Unordered map, the initial lookup time was hovering right around 120 ns until around 100k elements where the latency began to increase until it eventually settled at around 450ns as the cache became extremely ineffective.</li>
+</ul>
+
+<p class="notice">Note: The lookup time went up from around 85ns to 120ns due to the addition of computing a pseudo-random number. This is a constant offset and doesn’t effect the analysis</p>
+
+<ul>
+  <li>Similarly for the map, the log scaled plot has an initially low slope which suddenly increases at right around the saturation point. The change in slope directly demonstrates the increase in access latency</li>
+  <li>This indicates that <strong>we can definitely predict the impact of CPU cache and create really solid estimates for runtime!</strong></li>
+</ul>
+
+<p>The bad news is that the vector lookup behavior seems completely unchanged. However, some research reveals that the underlying data for a <code class="highlighter-rouge">pair&lt;int, int&gt;</code> is allocated on the heap and the vector contains the pointer to the underlying heap region. This does explain why the saturation point isn’t a great model for point of declining performance. Making frequent accesses to the heap to dereference pointers may have had a large impact on the effectiveness of the cache’s <a href="https://en.wikipedia.org/wiki/Locality_of_reference">spatial locality</a> and the boundary between good and bad cache utilization is not as clear or significant as with the other two collections. This also brings to light a good lesson while exploring the impact of architecture on application performance: <strong>Sometimes it gets complicated to exactly predict performance due to the sheer number of factors at play</strong>.</p>
+
+<p>Thanks for giving this a read. I’d love to hear your thoughts so feel free to shoot me an email!</p>
+
+<h2 id="tldr">tl;dr</h2>
+
+<ul>
+  <li>There are a lot of different kinds of memory. The fast stuff is expensive, so we need to use it well!</li>
+  <li>We use the fast stuff to design a special memory store between the CPU and main memory called cache</li>
+  <li>This cache can be designed in different ways each with it’s own tradeoffs</li>
+  <li>Modern processors have layers of different chained cache’s with varying properties.</li>
+  <li>If our access patterns are perfectly suited to the cache, then our algorithms will behave very similar to their average asymptotic runtime</li>
+  <li>The access pattern is usually not that great, which introduces interesting and sometimes predictable changes to our performance</li>
+</ul>
+
 
         
       </section>
@@ -578,7 +665,7 @@ UnorderedMapFixture/BM_UnorderedMapLookup/134217728       88.0 ns         88.0 n
 
         
 
-  <p class="page__date"><strong><i class="fas fa-fw fa-calendar-alt" aria-hidden="true"></i> Updated:</strong> <time datetime="2023-05-23T15:23:54-04:00">May 23, 2023</time></p>
+  <p class="page__date"><strong><i class="fas fa-fw fa-calendar-alt" aria-hidden="true"></i> Updated:</strong> <time datetime="2023-05-29T15:23:54-04:00">May 29, 2023</time></p>
 
 
       </footer>
@@ -586,11 +673,11 @@ UnorderedMapFixture/BM_UnorderedMapLookup/134217728       88.0 ns         88.0 n
       <section class="page__share">
   
 
-  <a href="https://twitter.com/intent/tweet?text=Effects+of+Cache+on+Application+Performance%20http%3A%2F%2Flocalhost%3A4000%2Fsystems%2Fembedded%2F2023%2F05%2F23%2Fcache-exploration.html" class="btn btn--twitter" onclick="window.open(this.href, 'window', 'left=20,top=20,width=500,height=500,toolbar=1,resizable=0'); return false;" title="Share on Twitter"><i class="fab fa-fw fa-twitter" aria-hidden="true"></i><span> Twitter</span></a>
+  <a href="https://twitter.com/intent/tweet?text=Effects+of+Cache+on+Application+Performance%20http%3A%2F%2Flocalhost%3A4000%2Fsystems%2Fembedded%2F2023%2F05%2F29%2Fcache-exploration.html" class="btn btn--twitter" onclick="window.open(this.href, 'window', 'left=20,top=20,width=500,height=500,toolbar=1,resizable=0'); return false;" title="Share on Twitter"><i class="fab fa-fw fa-twitter" aria-hidden="true"></i><span> Twitter</span></a>
 
-  <a href="https://www.facebook.com/sharer/sharer.php?u=http%3A%2F%2Flocalhost%3A4000%2Fsystems%2Fembedded%2F2023%2F05%2F23%2Fcache-exploration.html" class="btn btn--facebook" onclick="window.open(this.href, 'window', 'left=20,top=20,width=500,height=500,toolbar=1,resizable=0'); return false;" title="Share on Facebook"><i class="fab fa-fw fa-facebook" aria-hidden="true"></i><span> Facebook</span></a>
+  <a href="https://www.facebook.com/sharer/sharer.php?u=http%3A%2F%2Flocalhost%3A4000%2Fsystems%2Fembedded%2F2023%2F05%2F29%2Fcache-exploration.html" class="btn btn--facebook" onclick="window.open(this.href, 'window', 'left=20,top=20,width=500,height=500,toolbar=1,resizable=0'); return false;" title="Share on Facebook"><i class="fab fa-fw fa-facebook" aria-hidden="true"></i><span> Facebook</span></a>
 
-  <a href="https://www.linkedin.com/shareArticle?mini=true&url=http%3A%2F%2Flocalhost%3A4000%2Fsystems%2Fembedded%2F2023%2F05%2F23%2Fcache-exploration.html" class="btn btn--linkedin" onclick="window.open(this.href, 'window', 'left=20,top=20,width=500,height=500,toolbar=1,resizable=0'); return false;" title="Share on LinkedIn"><i class="fab fa-fw fa-linkedin" aria-hidden="true"></i><span> LinkedIn</span></a>
+  <a href="https://www.linkedin.com/shareArticle?mini=true&url=http%3A%2F%2Flocalhost%3A4000%2Fsystems%2Fembedded%2F2023%2F05%2F29%2Fcache-exploration.html" class="btn btn--linkedin" onclick="window.open(this.href, 'window', 'left=20,top=20,width=500,height=500,toolbar=1,resizable=0'); return false;" title="Share on LinkedIn"><i class="fab fa-fw fa-linkedin" aria-hidden="true"></i><span> LinkedIn</span></a>
 </section>
 
 
