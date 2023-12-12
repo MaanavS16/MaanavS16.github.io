@@ -55,7 +55,8 @@ plugins:
 # Site Author
 author:
   name             : "Maanav Singh"
-  avatar           : "/assets/images/re_li_pfp.png"
+  #avatar          : "/assets/images/re_li_pfp.png"
+  avatar           : "https://avatars.githubusercontent.com/u/50304418" 
   bio              : "CS and Math Student at UNC Chapel Hill"
   location         : "Morrisville, NC"
   email            : "msingh2@unc.edu"
