@@ -1,0 +1,67 @@
+---
+layout: single
+title:  "Fast Dynamic Dispatch"
+date:   2023-12-17 15:23:54 -0400
+categories: systems programming-languages
+---
+
+
+## Quick intro to Dynamic and Static Dispatch.
+
+
+### What are we dispatching?
+
+In this context, Dynamic/Static Dispatch refers to the technique the compiler/language employs to locate the implementation for a method. The ability to call a method and have the specific implementation we requested, is something we often take for granted, but does involve many unclear design and performance choices.
+
+
+### Dynamic Dispatch
+
+{% capture notice-2 %}
+"In computer science, dynamic dispatch is the process of selecting which implementation of a polymorphic operation (method or function) to call at run time. It is commonly employed in, and considered a prime characteristic of, object-oriented programming (OOP) languages and systems."
+{% endcapture %}
+
+In simple terms, dynamic dispatch is the technique the programming language uses to resolve which definition of a class to use at runtime.
+
+### So what's static dispatch?
+
+Now that we know dynamic dispatch refers to resolving function implementations at runtime, we intuitively guess that static dispatch involves determining implementations at compile time.
+
+More specifically, static dispatch involves either inlining function code directly into the resulting binary or having the compiler "hard-code" in a function pointer to the implementation. Dynamic dispatch in contrast involves using runtime techniques to determine the value of this function pointer. This concept is show in the diagram below, notice how there is a direct link between the binary result and the function code -- meaning the following example is static dispatch.
+
+![static_dispatch](/assets/images/static_dispatch.png)
+
+
+This is in contrast to dynamic dispatch, where there is no direct connection between the binary and the implementation code.
+![dynamic_dispatch](/assets/images/dynamic_dispatch.png)
+
+From this initial description, employing static dispatch feels like a huge win from a performance perspective due to additional runtime work, and there is some truth to that assumption; The default implementation of methods in c++ is static for this reason. However, with heavily object oriented programs there are a few reasons to favor dynamic dispatch.
+
+* Dynamic dispatch offers faster compile times
+* Statically dispatched binaries tend to be bloated -- especially if the compiler chooses to inline methods.
+
+
+## Why do I care about method dispatch?
+
+I recently stumbled across a [youtube video](https://www.youtube.com/watch?v=N3KhMOk_6HE) reviewing the decompiled GTA-3 Source code. It was a neat find, and bit of a prehistoric find since the game was released ~2 years before I was born.
+
+It seemed odd how much the game developers relied on switch cases as a "manual" way of implementing their own dynamic dispatch over using virtual functions for polymorphism of weapons, vehicles, and more. Which other viewers noticed as well:
+
+
+![Alt text](image.png)
+
+
+This design pattern would almost surely be rejected in a modern day code review at a tech company, due to the incredibly tight coupling between implementations and interfaces. You would need to refactoring existing code to add a new weapon of vehicle to the game -- not a great design...
+
+This led me down a bit of a rabbit whole of exploration, and my initial hypothesis is either
+1. This is a weird artifact of the de-compilation process.
+2. This is an intentional performance improvement over traditional dynamic dispatching techniques 
+
+In order to test this hypothesis, I'm going to compare the performance of standard dynamic dispatch using a technique called Virtual Method Tables (vtables) as well as with a Switch Case, which uses an underlying jump-table to accomplish the same task.
+
+Then for fun, I'm going to try to solve this problem using Template Meta Programming ([TMP](https://en.wikipedia.org/wiki/Template_metaprogramming)), and see if there's any room for performance improvements there.
+
+## Solution 1: Vtables
+
+## Solution 2: Switch Case
+
+## Solution 3: Template Meta Programming
