@@ -9,17 +9,24 @@ author_profile: true
 🏆- Favorite class of the semester award
 
 All the professors who've earned a 🏆:
+* [Don Porter](https://www.cs.unc.edu/~porter/)
 * [Kevin Jeffay](https://jeffay.web.unc.edu/)
 * [Leonard McMillan](http://www.csbio.unc.edu/mcmillan/index.py)
 * [Samarjit Chakraborty](https://www.cs.unc.edu/~samarjit/)
 * [Chuanshu Ji](https://stor.unc.edu/faculty-member/ji-chuanshu/)
 
+## Spring 2024 (In progress)
+* *Graduate Operating Systems (Implementation)*
+* *Real Analysis*
+* *Mathematical methods for the physical sciences*
+* *Distributed Systems*
+* **Teaching assistant for TBD**
 
-## Fall 2023 (Hasn't happened yet)
-* *Programming Languages*
-* *Operating Systems*
-* *Parallel and Distributed Computing*
-* *Graduate Algorithms*
+## Fall 2023
+* *Programming Languages*: Learned SML, Prolog, and Lisp. Wrote a lambda supporting lisp interpreter in Java.
+* 🏆*Operating Systems*: "Any problem in computer science can be solved by another layer of indirection"
+* *Beyond Objects: Programming in the 21st Century*: Fast and broad trip across many different programming paradigms and models.
+* *2D-Graphics*: Developed a performant 2-D graphics library in C++
 * **Teaching assistant for Programming Intelligent Physical Systems (PIPS)**
 
 ## Spring 2023
@@ -39,7 +46,7 @@ All the professors who've earned a 🏆:
 * *Foundations of Programming*: Learned a lot of design patterns
 * *Systems Fundamentals*: Wrote code in C => Segmentation fault (core dumped)
 * *Models of Languages and Computation*: Regex now makes sense. [Chompsky's hierarchy](https://www.youtube.com/watch?v=224plb3bCog)
-* 🏆*Programming Intelligent Physical Systems*: Learned how to model and control systems. Then again, but on a processor 🖥️
+* 🏆*Programming Intelligent Physical Systems*: Learned how to model and control continuous systems. Then again, but on a discrete processor 🖥️
 * *English 105i*: Writing clearly matters a lot everywhere!
 
 ## Fall 2021 (First semester at UNC 🐏)
