@@ -5,9 +5,10 @@ date:   2023-12-17 15:23:54 -0400
 categories: systems programming-languages
 ---
 
+Virtual Method Resolution is really opaque. Let's take a look performance and design in g++
 
-## Quick intro to Dynamic and Static Dispatch.
 
+I'm going to start by laying out some background definitions and terms before diving into the more interesting motivations for this post.
 
 ### What are we dispatching?
 
@@ -28,6 +29,8 @@ Now that we know dynamic dispatch refers to resolving function implementations a
 
 More specifically, static dispatch involves either inlining function code directly into the resulting binary or having the compiler "hard-code" in a function pointer to the implementation. Dynamic dispatch in contrast involves using runtime techniques to determine the value of this function pointer. This concept is show in the diagram below, notice how there is a direct link between the binary result and the function code -- meaning the following example is static dispatch.
 
+
+
 ![static_dispatch](/assets/images/static_dispatch.png)
 
 
@@ -42,26 +45,216 @@ From this initial description, employing static dispatch feels like a huge win f
 
 ## Why do I care about method dispatch?
 
-I recently stumbled across a [youtube video](https://www.youtube.com/watch?v=N3KhMOk_6HE) reviewing the decompiled GTA-3 Source code. It was a neat find, and bit of a prehistoric find since the game was released ~2 years before I was born.
+I recently stumbled across a [youtube video](https://www.youtube.com/watch?v=N3KhMOk_6HE) reviewing the decompiled GTA-3 Source code. It was a neat find, and a bit prehistoric since the game was released ~2 years before I was born.
 
 It seemed odd how much the game developers relied on switch cases as a "manual" way of implementing their own dynamic dispatch over using virtual functions for polymorphism of weapons, vehicles, and more. Which other viewers noticed as well:
 
 
-![Alt text](image.png)
+![youtube_post](/assets/images/image.png)
 
 
-This design pattern would almost surely be rejected in a modern day code review at a tech company, due to the incredibly tight coupling between implementations and interfaces. You would need to refactoring existing code to add a new weapon of vehicle to the game -- not a great design...
+This design pattern would almost surely be rejected in a modern day code review, due to the incredibly tight coupling between implementations and interfaces. You would need to refactor a huge web of existing code to add a new weapon of vehicle to the game -- not a great design...
 
 This led me down a bit of a rabbit whole of exploration, and my initial hypothesis is either
-1. This is a weird artifact of the de-compilation process.
+1. This is a weird artifact of the de-compilation process. (We don't have the actual exact GTA-3 source)
 2. This is an intentional performance improvement over traditional dynamic dispatching techniques 
 
-In order to test this hypothesis, I'm going to compare the performance of standard dynamic dispatch using a technique called Virtual Method Tables (vtables) as well as with a Switch Case, which uses an underlying jump-table to accomplish the same task.
+In order to test this hypothesis, I'm going to profile and understand the performance of standard dynamic dispatch using a technique called Virtual Method Tables (vtables).
 
-Then for fun, I'm going to try to solve this problem using Template Meta Programming ([TMP](https://en.wikipedia.org/wiki/Template_metaprogramming)), and see if there's any room for performance improvements there.
+Then for fun, I'm going to try to solve this problem using Switch cases, Template Meta Programming ([TMP](https://en.wikipedia.org/wiki/Template_metaprogramming)), and more to see if there's any room for performance improvements there.
 
-## Solution 1: Vtables
+## Vtables: How C++ handles virtual functions.
 
-## Solution 2: Switch Case
+The vtable, also known as the Virtual Method Table (VMT), is a simple data structure scoped to an object that is used methods to their implementations. The C++ standard does not require dynamic dispatch to be performed using this technique, but most compilers, including g++ will use this technique.
 
-## Solution 3: Template Meta Programming
+This is generally accomplished, by including a pointer to a vtable structure in any class that has or inherits a method marked virtual. The details of how this is done varies from compiler to compiler, so I've written the following illustrative code example so I can inspect the generated assembly.
+
+```c++
+class Animal {
+public:
+    virtual void makeNoise() const {
+        std::cout << "????" << std::endl;
+    }
+
+    // Non-virtual function
+    int id() const {
+        return 0;
+    }
+};
+
+class Cat : public Animal {
+public:
+    // Override the virtual function. Dynamically dispatched at runtime
+    void makeNoise() const override {
+        std::cout << "Meow :3" << std::endl;
+    }
+
+    void id() const {
+        return 1;
+    }
+};
+
+
+int main() {
+    Cat* cat = new Cat();
+    Animal* animalCat = (Animal*) cat;
+
+    std::cout << cat->id() << std::endl;
+    // Output: 1
+    // Explanation: This object is referenced as Cat*, so the Cat.id method is statically dispatched.
+
+    std::cout << animalCat->id() << std::endl;
+    // Output: 0
+    // Explanation: This object is referenced as Animal*, so the Animal.id method is statically dispatched.
+
+    cat->makeNoise();
+    // Output: Meow :3
+    // Explanation: This inherited method is marked virtual by Animal, so the Cat.makeNoise method is dynamically dispatched
+
+    animalCat->makeNoise();
+    // Output: Meow :3
+    // Explanation: This method is marked virtual in Animal, so the Cat.makeNoise method is dynamically dispatched
+}
+
+```
+
+Let's first take a look at the performance. I'm using the google benchmarking library in c++ to measure the execution time of the same method. Using both virtual and non-virtual methods. Feel free to reach out to me if you'd like my code, but for now the results are shown below.
+
+I wanted to try out [Magic Trace](https://github.com/janestreet/magic-trace), but I'm a Windows and Mac User and currently Magic Trace only works with on-metal linux and CPU+Kernel compatible with Intel® Processor Trace. I'll probably get around to booting up linux for this some day, but today is not that day.
+
+
+{% capture notice-2 %}
+All following benchmarks will be run w/
+- i9-10980XE processor
+- 2x32 GB DDR4 Memory @ 2666 MHZ
+- gcc version 9.4.0 (Ubuntu 9.4.0-1ubuntu1~20.04.1)
+- [google benchmarking library](https://github.com/google/benchmark)
+- Ubunutu WSL on Windows 11
+{% endcapture %}
+
+
+**(BENCHMARKS PENDING)**
+
+Ok, well as expected there is some overhead to virtual methods. I'm going to generate the assembly from the above Animal/Cat program to see what's going on w/ `g++ -S virtual.cpp -fverbose-asm -O0` (Generate verbose and un-optimized assembly)
+
+
+
+#### Main:
+```assembly
+# virtual.cpp:29:     Cat* cat = new Cat();
+	movl	$8, %edi	#,
+	call	_Znwm@PLT	#
+	movq	%rax, %rbx	# tmp93, _11
+	movq	$0, (%rbx)	#, MEM[(struct Cat *)_12].D.36383._vptr.Animal
+	movq	%rbx, %rdi	# _11,
+	call	_ZN3CatC1Ev	#
+	movq	%rbx, -32(%rbp)	# _11, cat
+# virtual.cpp:30:     Animal* animalCat = (Animal*) cat;
+	movq	-32(%rbp), %rax	# cat, tmp94
+	movq	%rax, -24(%rbp)	# tmp94, animalCat
+# virtual.cpp:32:     std::cout << cat->id() << std::endl;
+	movq	-32(%rbp), %rax	# cat, tmp95
+	movq	%rax, %rdi	# tmp95,
+	call	_ZNK3Cat2idEv	#
+	movl	%eax, %esi	# _1,
+	leaq	_ZSt4cout(%rip), %rdi	#,
+	call	_ZNSolsEi@PLT	#
+	movq	%rax, %rdx	#, _2
+# virtual.cpp:32:     std::cout << cat->id() << std::endl;
+	movq	_ZSt4endlIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_@GOTPCREL(%rip), %rax	#, tmp96
+	movq	%rax, %rsi	# tmp96,
+	movq	%rdx, %rdi	# _2,
+	call	_ZNSolsEPFRSoS_E@PLT	#
+# virtual.cpp:36:     std::cout << animalCat->id() << std::endl;
+	movq	-24(%rbp), %rax	# animalCat, tmp97
+	movq	%rax, %rdi	# tmp97,
+	call	_ZNK6Animal2idEv	#
+	movl	%eax, %esi	# _3,
+	leaq	_ZSt4cout(%rip), %rdi	#,
+	call	_ZNSolsEi@PLT	#
+	movq	%rax, %rdx	#, _4
+# virtual.cpp:36:     std::cout << animalCat->id() << std::endl;
+	movq	_ZSt4endlIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_@GOTPCREL(%rip), %rax	#, tmp98
+	movq	%rax, %rsi	# tmp98,
+	movq	%rdx, %rdi	# _4,
+	call	_ZNSolsEPFRSoS_E@PLT	#
+# virtual.cpp:40:     cat->makeNoise();
+	movq	-32(%rbp), %rax	# cat, tmp99
+	movq	(%rax), %rax	# cat_15->D.36383._vptr.Animal, _5
+	movq	(%rax), %rdx	# *_5, _6
+# virtual.cpp:40:     cat->makeNoise();
+	movq	-32(%rbp), %rax	# cat, tmp100
+	movq	%rax, %rdi	# tmp100,
+	call	*%rdx	# _6
+# virtual.cpp:44:     animalCat->makeNoise();
+	movq	-24(%rbp), %rax	# animalCat, tmp101
+	movq	(%rax), %rax	# animalCat_16->_vptr.Animal, _7
+	movq	(%rax), %rdx	# *_7, _8
+# virtual.cpp:44:     animalCat->makeNoise();
+	movq	-24(%rbp), %rax	# animalCat, tmp102
+	movq	%rax, %rdi	# tmp102,
+	call	*%rdx	# _8
+```
+
+Wow, that's a good bit to digest -- Don't worry the complicated parts are for writing to stdout. Let's break down the relevant parts...
+
+---
+As a quick refresher, feel free to skip if you're already an assembly wizard 🧙:
+
+* the `movq a b` instruction moves 64 bits from operand a to b.
+
+* `%rbp` is a 64 bit register, which by convention stores the frame pointer -- which is the bottom of the current stack frame.
+    * But confusingly, this is also the max address of the current stack frame since the stack grows top to down by convention.
+
+* `%rsp`, also a 64 bit register, stores the top of the current stack frame. (i.e. the lowest address)
+
+* `%rax` and `%rdx`, are 64 bit registers which typically store routine return values.
+
+---
+
+Regardless of dynamic or static dispatch, the compiler generates the following instructions:
+
+1) `movq	-32(%rbp), %rax	# cat, tmp99`: simply moves the pointer to the cat class into the `%rax` register by providing cat's location as a offset from main's base pointer.
+
+2) `movq	(%rax), %rax`: will read the contents of `%rax` from memory which essentially dereferences the first 64 bits of cat back into `%rax`
+
+
+### Then for static dispatch:
+
+These lines are statically dispatched so the compiler directly inserts/calls the functions by address (add move args into relevant registers if we had any).
+        * `call	_ZNK3Cat2idEv` is used for the direct call to Cat.id
+        * `call	_ZNK6Animal2idEv` is for Animal.id
+
+This is fast and simple -- we directly call and that's all :)
+
+### Vs for dynamic dispatch
+
+* `animalCat->makeNoise()`
+
+	```
+	movq	(%rax), %rdx	# *_5, _6
+	movq	-32(%rbp), %rax	# cat, tmp100
+	movq	%rax, %rdi	# tmp100,
+	call	*%rdx	# _
+    ```
+
+3) `movq	(%rax), %rdx`: The first 64 bits of the cat object are again dereferenced into `%rdx`. This is where the magic start to happen, since the start of the the cat struct is the vtable and our makeNoise method is index 0 -- the first 64 bits contains the correct function pointer! (i.e the `%rdx` register now has our cat.makeNoise*)
+
+4) The next two lines are irrelevant since we don't have any arguments. But would be needed otherwise
+
+5) Finally, now that we have a function pointer it's as simple as executing `call %rdx` and processing the output as before :)
+
+----
+
+Now that we've traced the execution of our, un-optimized c++. The following diagram outlines the steps required for each dispatch strategy. Each "X" denotes one or more load operations, resulting in a potentially very expensive memory lookup.
+
+![youtube_post](/assets/images/dispatch_timeline.png)
+
+As you can see, we have 1 extra dereference with dynamic dispatch over static dispatch in our generated binary. Which is really neat because **this is very closely in-line with our benchmarks!**
+
+
+
+
+
+
+
