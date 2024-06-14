@@ -7,5 +7,7 @@ main:
       url: /projects.html
     - title: "Teaching + Learning"
       url: /education/
+    - title: "Photography"
+      url: /photos
     - title: "Resume"
       url: /assets/resume/maanav-singh-resume.pdf
