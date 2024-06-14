@@ -15,12 +15,8 @@ All the professors who've earned a 🏆:
 * [Samarjit Chakraborty](https://www.cs.unc.edu/~samarjit/)
 * [Chuanshu Ji](https://stor.unc.edu/faculty-member/ji-chuanshu/)
 
-## Spring 2024 (In progress)
-* *Graduate Operating Systems (Implementation)*
-* *Real Analysis*
-* *Mathematical methods for the physical sciences*
-* *Distributed Systems*
-* **Teaching assistant for TBD**
+## Spring 2024 
+* Internship at Palantir
 
 ## Fall 2023
 * *Programming Languages*: Learned SML, Prolog, and Lisp. Wrote a lambda supporting lisp interpreter in Java.
