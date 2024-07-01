@@ -5,16 +5,7 @@ permalink: /photos
 author_profile: true
 ---
 
+[Friends]({% link _pages/photos_friends.md %})
 
-| ![view](/assets/images/personal/image.png) | 
-|:--:| 
-| *A glimpse out my window at the Windsor Suites in Philadelphia* |
+[Architecture]({% link _pages/photos_arch.md %})
 
-
-| ![view1](/assets/images/personal/DSC02181.jpg) | 
-|:--:| 
-| *View of Cathedral Basilica of Saints Peter and Paul* |
-
-| ![view2](/assets/images/personal/DSC02217.jpg) | 
-|:--:| 
-| *My second take after sunset* |
