@@ -9,7 +9,9 @@ Hello there! I'm an aspiring software engineer and computer scientist. I study [
 
 My technical interests span Programming Languages, High Performance Computing, and Distributed Systems. I love packing my schedule with challenging classes and working on projects. I've served as a teaching assistant for Files and Databases, and strive to condense complicated topics into managible and informative guides: both as an instructor and technical collaborator.
 
-Professionally, I'm currently interning at [Susquehanna International Group](https://www.sig.com/) conducting low latency research. I mess around with cool new hardware and find ways to improve the latency of trading systems. 
+~~Professionally, I'm currently interning at [Susquehanna International Group](https://www.sig.com/) conducting low latency research. I mess around with cool new hardware and find ways to improve the latency of trading systems.~~ 
+
+I will now be moving to NYC to do more of the above
 
 I've also previously worked at...
 * [Palantir](https://www.palantir.com/) as a Software Engineer working on Disaster Recovery and Storage Infrastructure.
